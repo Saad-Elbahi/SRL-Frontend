@@ -1,0 +1,334 @@
+
+<div class="card">
+    <h5 class="card-header">Filter de Recherche</h5>
+    <div class="card-body">
+        <div class="users-list-filter">
+            <form>
+                <div class="row">
+                    <!-- Search by Date -->
+                    <div class="col-12 col-md-4">
+                        <fieldset class="form-group">
+                            <input type="date" class="form-control" [(ngModel)]="filterDate" name="filterDate"
+                                   placeholder="Rechercher Avec la date " (change)="filterData()" />
+                        </fieldset>
+                    </div>
+                    <!-- Search by Vehicle Name -->
+                    <div class="col-12 col-md-4">
+                        <fieldset class="form-group">
+                            <input type="text" class="form-control" [(ngModel)]="filterVehiculeName" name="filterVehiculeName"
+                                   placeholder="Rechercher avec Nom Vehicule" (keyup)="filterData()" />
+                        </fieldset>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Table displaying filtered data -->
+<ngx-datatable
+        [rows]="filteredRoutes"
+        [rowHeight]="50"
+        class="bootstrap core-bootstrap"
+        [limit]="20"
+        [columnMode]="ColumnMode.force"
+        [headerHeight]="50"
+        [footerHeight]="50"
+        [scrollbarH]="true">
+
+    <ngx-datatable-column name="Date" prop="date" [width]="150">
+        <ng-template let-row="row" ngx-datatable-cell-template>
+            {{ row.date | date: 'dd/MM/yyyy' }}
+        </ng-template>
+    </ngx-datatable-column>
+
+    <ngx-datatable-column name="Vehicule" prop="vehiculeGpsLocation.name" [width]="150">
+        <ng-template let-row="row" ngx-datatable-cell-template>
+            {{ row.vehiculeGpsLocation?.name }}
+        </ng-template>
+    </ngx-datatable-column>
+
+    <ngx-datatable-column name="Type" prop="vehiculeGpsLocation.group_name" [width]="150">
+        <ng-template let-row="row" ngx-datatable-cell-template>
+            {{ row.vehiculeGpsLocation.group_name }}
+        </ng-template>
+    </ngx-datatable-column>
+
+    <ngx-datatable-column name="Km parcouru" prop="routeLength" [width]="150">
+        <ng-template let-row="row" ngx-datatable-cell-template>
+            <strong style="color: green;">{{ row.route_length }} km</strong>
+        </ng-template>
+    </ngx-datatable-column>
+
+    <ngx-datatable-column name="Cout du Voyage" prop="costPerTrip" [width]="150">
+        <ng-template let-row="row" ngx-datatable-cell-template>
+            {{ row.costPerTrip | currency: ' ' }}
+        </ng-template>
+    </ngx-datatable-column>
+
+    <ngx-datatable-column name="% Remplissage" [width]="200">
+        <ng-template let-row="row" ngx-datatable-cell-template>
+            <div class="d-flex align-items-center">
+                <select
+                        [(ngModel)]="row.fillingPercentage"
+                        class="form-control"
+                        [style.width.px]="100">
+                    <option *ngFor="let option of [25, 50, 75, 100]" [value]="option">
+                        {{ option }}%
+                    </option>
+                </select>
+                <button
+                        style="color: orange;"
+                        type="button"
+                        class="btn btn-primary ml-2"
+                        (click)="confirmFillingPercentage(row)">
+                    Confirm
+                </button>
+            </div>
+        </ng-template>
+    </ngx-datatable-column>
+
+    <ngx-datatable-column name="Coût du perte" prop="fillingCost" [width]="150">
+        <ng-template let-row="row" ngx-datatable-cell-template>
+            <strong style="color: orangered;">{{  row.costPerTrip - row.fillingCost | currency: ' ' }}</strong>
+        </ng-template>
+    </ngx-datatable-column>
+
+    <ngx-datatable-column name="Actions" [width]="40" [sortable]="false">
+        <ng-template ngx-datatable-cell-template let-row="row">
+            <div ngbDropdown container="body">
+                <button ngbDropdownToggle type="button" class="btn icon-btn btn-sm hide-arrow" rippleEffect>
+                    <span [data-feather]="'more-vertical'" class="cursor-pointer"></span>
+                </button>
+                <div ngbDropdownMenu>
+                    <a (click)="openModal(associationModal, row)" ngbDropdownItem>
+                        <span data-feather="link" class="mr-50"></span>  From -> To
+                    </a>
+                    <a (click)="openModals(imputationModal, row)" ngbDropdownItem>
+                        <span data-feather="edit" class="mr-50"></span>  Imputation
+                    </a>
+                </div>
+            </div>
+        </ng-template>
+    </ngx-datatable-column>
+
+</ngx-datatable>
+
+
+<!-- Modal for Association -->
+<ng-template #associationModal let-modal>
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Details From -> To</h5>
+                <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Form for Adding/Editing FromMouvement -->
+                <form (ngSubmit)="saveAssociation()">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                            <tr>
+                                <th>Affaire</th>
+                                <th>Fournisseur</th>
+                                <th>BL</th>
+                                <th>BL Montant</th>
+                                <th>Date BL</th>
+                                <th>Departement</th>
+                                <th>To Affaire</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr *ngFor="let fromMouvement of fromMouvements; let i = index">
+                                <td>
+                                    <select class="form-control custom-input-select" [(ngModel)]="fromMouvement.affaire"
+                                            name="affaire_{{i}}" [disabled]="fromMouvement.fournisseur" required>
+                                        <option *ngFor="let affaire of affaires" [ngValue]="affaire">
+                                            {{ affaire.name }}
+                                        </option>
+                                    </select>
+                                </td>
+
+
+                                <td>
+                                    <select class="form-control custom-input-select" [(ngModel)]="fromMouvement.fournisseur"
+                                            name="fournisseur_{{i}}" [disabled]="fromMouvement.affaire" required>
+                                        <option *ngFor="let fournisseur of fournisseurs" [ngValue]="fournisseur">
+                                            {{ fournisseur.name }}
+                                        </option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-lg custom-input"
+                                           [(ngModel)]="fromMouvement.bl"
+                                           name="bl_{{i}}" required />
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-lg custom-input"
+                                           [(ngModel)]="fromMouvement.blMontant" name="blMontant_{{i}}" required />
+                                </td>
+                                <input type="date" class="form-control form-control-lg"
+                                       [ngModel]="fromMouvement.dateBl | date:'yyyy-MM-dd'"
+                                       (ngModelChange)="fromMouvement.dateBl = $event"
+                                       name="dateBl_{{i}}" required />
+                                <td>
+                                    <input type="text" class="form-control form-control-lg custom-input"
+                                           [(ngModel)]="fromMouvement.departement"
+                                           name="departement_{{i}}" required />
+                                </td>
+                                <td>
+                                    <select class="form-control custom-input-select" [(ngModel)]="fromMouvement.toAffaire"
+                                            name="toAffaire_{{i}}" required>
+                                        <option *ngFor="let affaire of affaires" [ngValue]="affaire">
+                                            {{ affaire.name }}
+                                        </option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-sm" (click)="removeFromMouvement(fromMouvement)">
+                                        Supprimer
+                                    </button>
+
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-3">
+                        <button type="button" class="btn btn-primary" (click)="addFromMouvement()">
+                            Ajouter
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            Sauvegarder
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</ng-template>
+
+<!-- Modal for Imputation -->
+<ng-template #imputationModal let-modal>
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Details Imputation </h5>
+                <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Form for Adding/Editing Imputations -->
+                <form (ngSubmit)="saveImputationAssociation()">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                            <tr>
+                                <th>Affaire</th>
+                                <th>% Imputation</th>
+                                <th>Observation</th>
+                                <th>Departement</th>
+                                <th>Cout Imputation</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr *ngFor="let imputation of imputations; let i = index">
+                                <td>
+                                    <select class="form-control custom-input-select" [(ngModel)]="imputation.affaire"
+                                            name="affaire_{{i}}" required>
+                                        <option *ngFor="let affaire of affaires" [ngValue]="affaire">
+                                            {{ affaire.name }}
+                                        </option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control form-control-lg custom-input"
+                                               [(ngModel)]="imputation.fillingPercentage" name="fillingPercentage_{{i}}" required min="0"
+                                               max="100" step="0.01" aria-label="Filling Percentage" />
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <input type="text" class="form-control form-control-lg custom-input"
+                                           [(ngModel)]="imputation.observation" name="observation_{{i}}" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-lg custom-input"
+                                           [(ngModel)]="imputation.departement" name="departement_{{i}}" required />
+                                </td>
+
+                                <td style="color: rgb(226, 10, 10);">{{ imputation.costImputation | number:'1.2-2' }} MAD</td>
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-sm" (click)="removeImputation(imputation)">
+                                        Supprimer
+                                    </button>
+                                </td>
+                            </tr>
+                            <td colspan="4" class="text-right"><strong>Total  Imputation:</strong></td>
+                            <td><strong style="color: orange;">{{ getTotalCostImputation() | number:'1.2-2' }} MAD</strong></td>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-3">
+                        <button type="button" class="btn btn-primary" (click)="addImputation()">
+                            Ajouter
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            Sauvegarder
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</ng-template>
+
+
+<!-- Detail Modal -->
+<ng-template #detailModal let-modal>
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">FromMouvement Details</h5>
+                <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                        <tr>
+                            <th>Affaire</th>
+                            <th>Fournisseur</th>
+                            <th>BL</th>
+                            <th>BL Montant</th>
+                            <th>Date BL</th>
+                            <th>Departement</th>
+                            <th>To Affaire</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr *ngFor="let fromMouvement of fromMouvements">
+                            <td>{{ fromMouvement.affaire?.name || 'N/A' }}</td>
+                            <td>{{ fromMouvement.fournisseur?.name || 'N/A' }}</td>
+                            <td>{{ fromMouvement.bl || 'N/A' }}</td>
+                            <td>{{ fromMouvement.blMontant | currency: 'MAD' }}</td>
+                            <td>{{ fromMouvement.dateBl | date: 'yyyy-MM-dd' }}</td>
+                            <td>{{ fromMouvement.departement || 'N/A' }}</td>
+                            <td>{{ fromMouvement.toAffaire?.name || 'N/A' }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</ng-template>

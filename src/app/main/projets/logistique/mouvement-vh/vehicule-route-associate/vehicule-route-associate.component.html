@@ -1,0 +1,67 @@
+<section class="vehicule-route-associate">
+    <div class="card">
+        <div class="card-header">
+            <h4>Associate Vehicule Route</h4>
+        </div>
+        <div class="card-body">
+            <form [formGroup]="associateForm" (ngSubmit)="onSubmit()">
+
+                <div class="form-group">
+                    <label for="vehicleId">Vehicle ID</label>
+                    <input type="text" formControlName="vehicleId" id="vehicleId" class="form-control" />
+                </div>
+
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" formControlName="date" id="date" class="form-control" />
+                </div>
+
+                <!-- FromMouvements -->
+                <div formArrayName="fromMouvements">
+                    <div *ngFor="let fromMouvement of fromMouvements.controls; let i=index" [formGroupName]="i">
+                        <h5>From Mouvement {{i + 1}}</h5>
+                        <!-- Add other FromMouvement fields similarly -->
+                        <div class="form-group">
+                            <label for="affaire">Affaire</label>
+                            <input type="text" formControlName="affaire" id="affaire" class="form-control" />
+                        </div>
+                        <div class="form-group">
+                            <label for="fournisseurs">Fournisseurs</label>
+                            <input type="text" formControlName="fournisseurs" id="fournisseurs" class="form-control" />
+                        </div>
+                        <!-- Add the other fields like bl, blMontant, etc. here -->
+                        <button type="button" (click)="removeFromMouvement(i)">Remove</button>
+                    </div>
+                    <button type="button" (click)="addFromMouvement()">Add From Mouvement</button>
+                </div>
+
+                <!-- ToAffaire -->
+                <div class="form-group">
+                    <label for="toAffaireId">To Affaire ID</label>
+                    <input type="text" formControlName="toAffaireId" id="toAffaireId" class="form-control" />
+                </div>
+
+                <!-- Imputations -->
+                <div formArrayName="imputations">
+                    <div *ngFor="let imputation of imputations.controls; let j=index" [formGroupName]="j">
+                        <h5>Imputation {{j + 1}}</h5>
+                        <!-- Add other Imputation fields similarly -->
+                        <div class="form-group">
+                            <label for="affaire">Affaire</label>
+                            <input type="text" formControlName="affaire" class="form-control" />
+                        </div>
+                        <div class="form-group">
+                            <label for="fillingPercentage">Filling Percentage</label>
+                            <input type="text" formControlName="fillingPercentage" id="fillingPercentage" class="form-control" />
+                        </div>
+                        <!-- Add the other fields like observation, departement, etc. here -->
+                        <button type="button" (click)="removeImputation(j)">Remove</button>
+                    </div>
+                    <button type="button" (click)="addImputation()">Add Imputation</button>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,157 @@
+import {HttpErrorResponse} from "@angular/common/http";
+import {Injectable} from "@angular/core";
+import {environment} from "../../../../../environments/environment";
+import {VehiculeRoute} from "../models/vehicule-route";
+import {BehaviorSubject, Observable, throwError} from "rxjs";
+import {catchError, map} from "rxjs/operators";
+import {AssociateFromToRequestDTO} from "../models/DTO/AssociateFromToRequestDTO";
+import {ImputationRequestDTO} from "../models/DTO/ImputationRequestDTO";
+import {SrManagerService} from "../../sr-manager.service";
+import {UpdateFillingPercentageDTO} from "../models/DTO/UpdateFillingPercentageDTO";
+import {PerformanceOverTimeRequestDTO} from "../models/DTO/PerformanceOverTimeRequestDTO";
+
+@Injectable({
+    providedIn: "root",
+})
+export class VehiculeRouteService {
+
+    onMouvementsListChanged: BehaviorSubject<any[]>;
+
+    constructor(private srManagerService: SrManagerService) {
+        // @ts-ignore
+        this.onMouvementsListChanged = new BehaviorSubject<any[]>();
+    }
+
+
+    getAllVehiculeRoutes(): Promise<any[]> {
+        let url = environment.vhrouteapi + '/getAllVehiculeRoutes';
+
+        return new Promise((resolve, reject) => {
+            this.srManagerService.getResource(url).pipe(
+                map((routes: VehiculeRoute[]) =>
+                    routes.sort((a, b) =>
+                        new Date(b.date!).getTime() - new Date(a.date!).getTime()))).subscribe(
+                (response: any[]) => {
+                    this.onMouvementsListChanged.next(response);
+                    resolve(response);
+                }, reject);
+        });
+    }
+
+    /*getAllVehiculeRoute(): Observable<VehiculeRoute[]> {
+        let url = environment.vhrouteapi + '/getAllVehiculeRoutes';
+
+        return this.srManagerService.getResource(url)
+            .pipe(map((routes: VehiculeRoute[]) =>
+                routes.sort((a, b) =>
+                    new Date(b.date!).getTime() - new Date(a.date!).getTime()))
+            );
+    }*/
+
+    deleteVehiculeRoute(id: number): Observable<any> {
+        return this.srManagerService.deleteRessource(`${environment.vhrouteapi}/deleteVehiculeroute/${id}`)
+            .pipe(catchError(this.handleError));
+    }
+
+    private handleError(error: HttpErrorResponse) {
+        if (error.error instanceof ErrorEvent) {
+            // Client-side error (e.g., network issue)
+            console.error("An error occurred:", error.error.message);
+        } else {
+            // Backend returned an unsuccessful response code
+            console.error(
+                `Backend returned status ${error.status}, ` + `body was: ${error.error}`
+            );
+        }
+        // Return an observable with a user-facing error message
+        return throwError("Something bad happened; please try again later.");
+    }
+
+    totalRouteLength(): Observable<any> {
+        return this.srManagerService.getResource(`${environment.vhrouteapi}/totalRouteLength`);
+    }
+
+
+    //A refaire
+    /* performanceOverTime(startDate: string, endDate: string): Observable<any> {
+       return this.srManagerService.getResourceWithParams(`${environment.vhrouteapi}/performanceOverTime`, {
+             params: {startDate: startDate, endDate: endDate,},
+           })
+           .pipe(catchError(this.handleError));
+     }*/
+
+    performanceOverTime(startDate: string, endDate: string): Observable<any> {
+        let dto: PerformanceOverTimeRequestDTO = new PerformanceOverTimeRequestDTO(startDate, endDate);
+        return this.srManagerService.postRessource(`${environment.vhrouteapi}/performanceOverTime`, dto)
+            .pipe(catchError(this.handleError));
+    }
+
+    totalCostPerTripByMonth(year: string, month: string) {
+        return this.srManagerService.getResource(`${environment.vhrouteapi}/totalCostPerTripByMonth/` + year + '/' + month);
+    }
+
+
+    //A Refaire
+    associateFromTo(request: AssociateFromToRequestDTO): Observable<VehiculeRoute> {
+        const url = `${environment.vhrouteapi}/associateFromTo`;
+        /*const params = new HttpParams().set(
+            "vehiculeRouteId",
+            vehiculeRouteId.toString()
+        );*/
+        return this.srManagerService.postRessource(url, request);
+    }
+
+
+    getVehiculeRouteById(vehiculeRouteId: number): Observable<any[]> {
+        // @ts-ignore
+        return this.srManagerService.getResources(`${environment.vhrouteapi}/getVehiculeRouteById/${vehiculeRouteId}`
+        );
+    }
+
+    //A Refaire
+    associateImputation(imputationRequest: ImputationRequestDTO): Observable<VehiculeRoute> {
+        const url = `${environment.vhrouteapi}/associateImputation`;
+        //const headers = new HttpHeaders({ "Content-Type": "application/json" });
+
+        return this.srManagerService.postRessource(url, imputationRequest);
+    }
+
+
+    imputationByVehiculeRoute(vehiculeRouteId: number): Observable<any[]> {
+        // @ts-ignore
+        return this.srManagerService.getResources(`${environment.tripimpapi}/imputationByVehiculeRoute/${vehiculeRouteId}`);
+    }
+
+
+    /*updateFillingPercentage(dto: UpdateFillingPercentageDTO): Promise<any> {
+
+        console.log(dto.vehiculeRouteId)
+        console.log(dto.fillingPercentage)
+        let url = environment.vhrouteapi + '/updateFillingPercentage';
+
+        return new Promise((resolve, reject) => {
+            // @ts-ignore
+            this.srManagerService.putRessource(url, dto).subscribe(
+                (response: any) => {
+                    this.onMouvementsListChanged.next(response);
+                    resolve(response);
+                }, reject);
+        });
+    }*/
+
+    updateFillingPercentage(dto: UpdateFillingPercentageDTO): Promise<any> {
+        let url = environment.vhrouteapi + '/updateFillingPercentage';
+
+        return new Promise((resolve, reject) => {
+            this.srManagerService.putRessource(url, dto).pipe(
+                map((routes: VehiculeRoute[]) =>
+                    routes.sort((a, b) =>
+                        new Date(b.date!).getTime() - new Date(a.date!).getTime()))).subscribe(
+                (response: any[]) => {
+                    this.onMouvementsListChanged.next(response);
+                    resolve(response);
+                }, reject);
+        });
+    }
+
+}
