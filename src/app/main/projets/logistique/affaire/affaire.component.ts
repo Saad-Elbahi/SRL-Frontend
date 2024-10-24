@@ -4,10 +4,10 @@ import {AffaireService} from "./affaire.service";
 import {ToastrService} from "ngx-toastr";
 import {Subject} from "rxjs";
 import * as snippet from "./affaireTable";
-import {Affaire} from "../models/affaire.model";
 import {ColumnMode, DatatableComponent, SelectionType,} from "@swimlane/ngx-datatable";
 import * as feather from "feather-icons";
 import {takeUntil} from "rxjs/operators";
+import { Affaire } from '../models/affaire.model';
 
 @Component({
     selector: 'app-affaire',
@@ -21,8 +21,7 @@ export class AffaireComponent implements OnInit {
     rows: Affaire[] = [];
     temp: Affaire[] = [];
 
-    // Properties for ngx-datatable configuration
-    public contentHeader: any; // Adjust type as per your contentHeader object structure
+    public contentHeader: any; 
     public chkBoxSelected: any[] = [];
     public SelectionType = SelectionType;
     public ColumnMode = ColumnMode;
@@ -32,8 +31,10 @@ export class AffaireComponent implements OnInit {
 
     @ViewChild(DatatableComponent) table: DatatableComponent;
     @ViewChild("tableRowDetails") tableRowDetails: any;
+  
+    codeFilter: string = ""; 
 
-    // Snippets for demonstration purposes
+
     public _snippetCodeKitchenSink = snippet.snippetCodeKitchenSink;
     public _snippetCodeInlineEditing = snippet.snippetCodeInlineEditing;
     public _snippetCodeRowDetails = snippet.snippetCodeRowDetails;
@@ -52,68 +53,51 @@ export class AffaireComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadAffaires();
-        /*  this.contentHeader = {
-            headerTitle: "Affaire",
-            actionButton: true,
-            breadcrumb: {
-              type: "",
-              links: [
-                {
-                  name: "Home",
-                  isLink: true,
-                  link: "/",
-                },
-                {
-                  name: "Affaire",
-                  isLink: true,
-                  link: "/",
-                },
-              ],
-            },
-          };*/
+       
         feather.replace();
     }
 
     loadAffaires(): void {
-        // Fetch all affaires and store them in `rows` and `temp` for ngx-datatable
-        /* this.affaireService.getAffaires().subscribe((data: Affaire[]) => {
-           this.rows = data;
-           this.temp = [...data]; // Copy data to temp for filtering purposes
-         });*/
-
         this.affaireService.onAffairesListChanged.pipe(takeUntil(this._unsubscribeAll)).subscribe(data => {
             if (data) {
-                this.rows = data;
-                this.temp = [...data];
-                console.log('Affaires')
-                console.log(data)
+                this.rows = Array.from(data); 
+                this.temp = Array.from(data); 
+                console.log('Affaires', data);
             }
         });
-
+    
         this.affaireService.getAllAffaire();
     }
+    
+    
 
     updateFilter(event: any): void {
         const val = event.target.value.toLowerCase();
-
-        // Filter data based on temp (original data)
+    
         const temp = this.temp.filter((d) => {
-            return d.name.toLowerCase().indexOf(val) !== -1 || !val;
+            return d.villeintitule.toLowerCase().indexOf(val) !== -1 ||
+                   d.code.toLowerCase().indexOf(val) !== -1 ||
+                   d.typeProjet.toLowerCase().indexOf(val) !== -1 ||
+                   d.chefZoneFullName.toLowerCase().indexOf(val) !== -1 ||
+                   d.chefZoneUsername.toLowerCase().indexOf(val) !== -1 || 
+                   !val; 
         });
-        this.rows = temp; // Update rows to reflect filtered data
+    
+        this.rows = temp; 
     }
+    
 
     deleteAffaire(id: number): void {
         this.affaireService.deleteAffaire(id).subscribe(() => {
-            this.loadAffaires(); // Reload affaires after deletion
+            this.loadAffaires(); 
         });
     }
 
     addNewAffaire(): void {
 
-        this.affaireService.saveAffaireFromApi().then(
+        this.affaireService.getAffaires().then(
             () => {
-                this.toastr.success("Affaire Char successfully!");
+                this.toastr.success("Affaire chargée avec succès !");
 
                 console.log("vehicule added ");
                 /*this.router.navigateByUrl("/", { skipLocationChange: true }).then(() => {
@@ -125,19 +109,19 @@ export class AffaireComponent implements OnInit {
 
     onSelect(event: any): void {
         console.log(event)
-        this.selectedAffaire = event.selected[0]; // Handle selection logic here
+        this.selectedAffaire = event.selected[0]; 
     }
 
     onActivate(event): void {
-        // Handle activation events if needed
     }
 
     customChkboxOnSelect({selected}): void {
-        this.chkBoxSelected = [...selected]; // Handle custom checkbox selection
+        this.chkBoxSelected = [selected]; 
     }
 
     rowDetailsToggleExpand(row): void {
-        this.tableRowDetails.rowDetail.toggleExpandRow(row); // Toggle row details if required
+        this.tableRowDetails.rowDetail.toggleExpandRow(row); 
     }
 
+    
 }

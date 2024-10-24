@@ -1,21 +1,23 @@
-import {Affaire} from "./EnginModels/Affaire";
-import {Fournisseur} from "./fournisseur";
-import {VehiculeGpsLocation} from "./vehicule-gps-location";
-import {VehiculeRoute} from "./vehicule-route";
+import { Affaire } from "./affaire.model";
+import { Fournisseur } from "./fournisseur";
+import { VehiculeGpsLocation } from "./vehicule-gps-location";
+import { VehiculeRoute } from "./vehicule-route";
 
 export class FromMouvement {
   id?: number;
-  affaire?: Affaire;
-  fournisseur?: Fournisseur;
-  bl?: string;
-  blMontant?: number;
-  dateBl?: Date;
-  departement?: string;
-  toAffaire?: Affaire; // Updated to match backend
+  affaire?: Partial<Affaire>;  
+  fournisseur?: Partial<Fournisseur>;  
+  bl: string;
+  blMontant: number;
+  dateBl: Date;
+  isNew?: boolean; 
+
+  
+
   vehiculeGpsLocation?: VehiculeGpsLocation;
   vehiculeRoute?: VehiculeRoute;
 
   constructor(init?: Partial<FromMouvement>) {
-      Object.assign(this, init);
+    Object.assign(this, init);
   }
 }

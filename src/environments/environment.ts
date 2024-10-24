@@ -21,7 +21,9 @@ export const environment = {
     tripimpapi: "http://localhost:6201/tripimpapi",
     vhgpsapi: "http://localhost:6201/vhgpsapi",
     vhrouteapi: "http://localhost:6201/vhrouteapi",
-
+    soustraitantapi:"http://localhost:6201/soustraitantapi",
+    lotApi:"http://localhost:6201/lotApi",
+    clientApi:"http://localhost:6201/clientApi"
 
 };
 

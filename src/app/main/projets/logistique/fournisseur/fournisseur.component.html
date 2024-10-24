@@ -1,4 +1,4 @@
-<div class="content-wrapper ">
+<div class="content-wrapper white-background ">
     <div class="content-body">
         <app-content-header [contentHeader]=""></app-content-header>
 
@@ -64,8 +64,7 @@
                             [resizeable]="false">
 
                     </ngx-datatable-column>
-                    <ngx-datatable-column name="ID" prop="id" [width]="250"></ngx-datatable-column>
-                    <ngx-datatable-column name="Fournisseur" prop="name" [width]="280">
+                    <ngx-datatable-column name="Fournisseur" prop="intituleFournisseur" [width]="350">
                         <ng-template let-row="row" let-name="value" ngx-datatable-cell-template>
                             <div class="d-flex align-items-center">
                                 <div class="cell-line-height">
@@ -74,7 +73,12 @@
                             </div>
                         </ng-template>
                     </ngx-datatable-column>
-                    <ngx-datatable-column name="Group Name" prop="groupName" [width]="250"></ngx-datatable-column>
+                    <ngx-datatable-column name="Adresse" prop="adresseFournisseur" [width]="350"></ngx-datatable-column>
+                    <ngx-datatable-column name="ICE" prop="ice" [width]="250"></ngx-datatable-column>
+                    <ngx-datatable-column name="Email" prop="email" [width]="350"></ngx-datatable-column>
+                    <ngx-datatable-column name="Telephone" prop="telephone" [width]="250"></ngx-datatable-column>
+                    <ngx-datatable-column name="Contact" prop="contact" [width]="250"></ngx-datatable-column>
+
                 </ngx-datatable>
         </section>
     </div>

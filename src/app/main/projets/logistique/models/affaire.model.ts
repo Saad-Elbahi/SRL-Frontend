@@ -1,5 +1,9 @@
 export interface Affaire {
   id: number;
-  groupName: string;
-  name: string;
+  code: string;
+  intitule: string;
+  typeProjet: string;
+  villeintitule: string;
+  chefZoneFullName: string;
+  chefZoneUsername: string;
 }

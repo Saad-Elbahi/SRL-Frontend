@@ -15,5 +15,6 @@ export class VehiculeRoute {
   constructor(init?: Partial<VehiculeRoute>) {
     Object.assign(this, init);
   }
+  isEditing?: boolean; // Add this line
 }
 

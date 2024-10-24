@@ -4,8 +4,12 @@
 @import '@core/scss/angular/libs/form-wizard.component.scss';
 
 .custom-input {
-  width: 200px; /* Adjust width as needed */
+  width: 200px; 
 }
 .custom-input-select{
   width: 250px;
 }
+.toast-top-right {
+  top: 20px !important;  
+}
+

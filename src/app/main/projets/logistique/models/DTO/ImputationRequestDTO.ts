@@ -1,12 +1,12 @@
-import {TripImputation} from "../TripImputation";
+import { TripImputation } from "../TripImputation";
+import { TripImputationDTO } from "./TripImputationDTO";
 
 export class ImputationRequestDTO {
-    vehiculeRouteId: number
-    imputations: TripImputation[];
+vehiculeRouteId: number;
+  imputations: TripImputationDTO[];
 
-
-    constructor(vehiculeRouteId: number, imputations: TripImputation[]) {
-        this.vehiculeRouteId = vehiculeRouteId;
-        this.imputations = imputations;
-    }
+  constructor(vehiculeRouteId: number, imputations: TripImputationDTO[]) {
+    this.vehiculeRouteId = vehiculeRouteId;
+    this.imputations = imputations;
+  }
 }

@@ -18,7 +18,7 @@ export class FournisseurService {
   }
 
   getAllFournisseurs(): Promise<Fournisseur[]> {
-    const url = this.apiURL + "/getAllFournisseur";
+    const url = this.apiURL + "/AllFournisseurs";
     return new Promise((resolve, reject) => {
           this.srManagerService.getResources(url).subscribe(
               (data: Fournisseur[]) => {

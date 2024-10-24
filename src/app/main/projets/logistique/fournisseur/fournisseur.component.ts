@@ -59,7 +59,7 @@ export class FournisseurComponent implements OnInit {
         data => {
           if(data && data.length>0) {
             this.rows = data;
-            this.temp = [...data];
+            this.temp = data;
           }
         });
     this.fournisseurService.getAllFournisseurs();
@@ -68,9 +68,8 @@ export class FournisseurComponent implements OnInit {
   updateFilter(event: any): void {
     const val = event.target.value.toLowerCase();
 
-    // Filter data based on temp (original data)
     const temp = this.temp.filter((d) => {
-      return d.name.toLowerCase().indexOf(val) !== -1 || !val;
+      return d.intituleFournisseur.toLowerCase().indexOf(val) !== -1 || !val;
     });
     this.rows = temp;
   }
@@ -108,7 +107,7 @@ export class FournisseurComponent implements OnInit {
   }
 
   customChkboxOnSelect({selected}): void {
-    this.chkBoxSelected = [...selected]; // Handle custom checkbox selection
+    this.chkBoxSelected = [selected]; // Handle custom checkbox selection
   }
 
   rowDetailsToggleExpand(row): void {

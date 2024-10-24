@@ -7,7 +7,8 @@
                     <ul ngbNav #nav="ngbNav" class="nav nav-pills">
                         <li ngbNavItem>
                             <a ngbNavLink>
-                                <i data-feather="info" class="mr-sm-50"></i><span class="d-none d-sm-block"> Information</span>
+                                <i data-feather="info" class="mr-sm-50"></i><span class="d-none d-sm-block">
+                                    Information</span>
                             </a>
 
                             <ng-template ngbNavContent>
@@ -16,7 +17,7 @@
                                     <div class="col-12">
                                         <h4 class="mb-1">
                                             <i data-feather="user" [size]="16" class="mr-75 font-medium-4"></i>
-                                            <span class="align-middle">Chauffeur Information  </span>
+                                            <span class="align-middle">Chauffeur Information </span>
                                         </h4>
                                     </div>
                                     <!-- Chauffeur edit form start -->
@@ -25,49 +26,62 @@
                                             <div class="col-md-4">
                                                 <div class="form-group">
                                                     <label for="name">Nom Complet</label>
-                                                    <input type="text" id="name" class="form-control" placeholder="Name" name="name"
-                                                           [(ngModel)]="chauffeur.name" required #NameRef="ngModel" />
-                                                    <span *ngIf="chauffeurForm.submitted && NameRef.invalid" class="invalid-form">
-                            <small class="form-text text-danger" *ngIf="NameRef.errors.required">This field is required!</small>
-                          </span>
+                                                    <input type="text" id="name" class="form-control" placeholder="Name"
+                                                        name="name" [(ngModel)]="chauffeur.name" required
+                                                        #NameRef="ngModel" />
+                                                    <span *ngIf="chauffeurForm.submitted && NameRef.invalid"
+                                                        class="invalid-form">
+                                                        <small class="form-text text-danger"
+                                                            *ngIf="NameRef.errors.required">This field is
+                                                            required!</small>
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="form-group">
                                                     <label for="email">Email</label>
-                                                    <input type="email" id="email" class="form-control" placeholder="Email" name="email"
-                                                           [(ngModel)]="chauffeur.email" required #EmailRef="ngModel" />
-                                                    <span *ngIf="chauffeurForm.submitted && EmailRef.invalid" class="invalid-form">
-                            <small class="form-text text-danger" *ngIf="EmailRef.errors.required">This field is required!</small>
-                          </span>
+                                                    <input type="email" id="email" class="form-control"
+                                                        placeholder="Email" name="email" [(ngModel)]="chauffeur.email"
+                                                        required #EmailRef="ngModel" />
+                                                    <span *ngIf="chauffeurForm.submitted && EmailRef.invalid"
+                                                        class="invalid-form">
+                                                        <small class="form-text text-danger"
+                                                            *ngIf="EmailRef.errors.required">This field is
+                                                            required!</small>
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="form-group">
                                                     <label for="phone">TéléPhone</label>
-                                                    <input type="text" id="phone" class="form-control" placeholder="Phone" name="phone"
-                                                           [(ngModel)]="chauffeur.phone" />
+                                                    <input type="text" id="phone" class="form-control"
+                                                        placeholder="Phone" name="phone"
+                                                        [(ngModel)]="chauffeur.phone" />
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="form-group">
-                                                    <label for="address">adresse</label>
-                                                    <input type="text" id="address" class="form-control" placeholder="Address" name="address"
-                                                           [(ngModel)]="chauffeur.address" />
+                                                    <label for="address">Role</label>
+                                                    <input type="text" id="address" class="form-control"
+                                                        placeholder="Role" name="address"
+                                                        [(ngModel)]="chauffeur.address" />
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="col-md-4">
                                                     <div class="form-group">
                                                         <label for="image">Image</label>
-                                                        <input type="file" id="image" class="form-control" (change)="uploadImage($event)" />
-                                                        <img [src]="avatarImage" *ngIf="avatarImage" class="mt-2" height="300" />
+                                                        <input type="file" id="image" class="form-control"
+                                                            (change)="uploadImage($event)" />
+                                                        <img [src]="avatarImage" *ngIf="avatarImage" class="mt-2"
+                                                            height="300" />
                                                     </div>
                                                 </div>
 
                                             </div>
                                             <div class="col-12 d-flex flex-sm-row flex-column mt-2">
-                                                <button type="submit" class="btn btn-primary mb-1 mb-sm-0 mr-0 mr-sm-1" rippleEffect>
+                                                <button type="submit" class="btn btn-primary mb-1 mb-sm-0 mr-0 mr-sm-1"
+                                                    rippleEffect>
                                                     Sauvegarder
                                                 </button>
                                                 <!-- <button type="button" class="btn btn-outline-secondary" (click)="resetFormWithDefaultValues()"

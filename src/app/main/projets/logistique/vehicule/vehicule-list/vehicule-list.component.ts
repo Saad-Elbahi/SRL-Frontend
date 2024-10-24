@@ -96,6 +96,11 @@ export class VehiculeListComponent implements OnInit {
     }
 
     confirmDeleteVehicle(id: number): void {
+        if (!id) {
+            console.error('Invalid vehicle ID:', id);
+            return; // Exit if vehiculeId is undefined or invalid
+        }
+    
         Swal.fire({
             title: 'Are you sure?',
             text: "You won't be able to revert this!",
@@ -113,7 +118,7 @@ export class VehiculeListComponent implements OnInit {
             } else if (result.dismiss === Swal.DismissReason.cancel) {
                 Swal.fire({
                     title: 'Not Cancelled',
-                    text: 'Your Vehicle is safe :)',
+                    text: 'Your vehicle is safe :)',
                     icon: 'error',
                     customClass: {
                         confirmButton: 'btn btn-success'
@@ -122,20 +127,32 @@ export class VehiculeListComponent implements OnInit {
             }
         });
     }
-
+    
+    
     deleteVehicule(id: number): void {
         this.vehiculeGpsLocationService.deleteVehicule(id).then(() => {
-           // this.loadVehicles();
+            // Refresh the list of vehicles here if needed
             Swal.fire({
                 title: 'Deleted!',
-                text: 'The chauffeur has been deleted.',
+                text: 'The vehicle has been deleted.',
                 icon: 'success',
                 customClass: {
                     confirmButton: 'btn btn-success'
                 }
             });
+        }).catch((error) => {
+            Swal.fire({
+                title: 'Error!',
+                text: `An error occurred while deleting the vehicle: ${error.status} - ${error.message || 'Unknown error'}`,
+                icon: 'error',
+                customClass: {
+                    confirmButton: 'btn btn-danger'
+                }
+            });
+            console.error('Deletion error:', error); // Log the error details for debugging
         });
     }
+    
 
 
 }

@@ -1,12 +1,22 @@
 <div class="content-wrapper">
     <div class="content-body">
+        <div class="card">
         <!-- Vehicle List -->
         <section class="vehicles-list-wrapper">
-            <div class="card">
+            <div class="col-12">
+                <h4 class="mb-3">
+                    <span class="align-middle"></span>
+                </h4>
+            </div>
+            <div class="col-12">
+                <h4 class="mb-3">
+                    <i data-feather="truck" size="24" class="mr-75 font-medium-4"></i>
+                    <span class="align-middle"> List Vehicules</span>
+                </h4>
+            </div>
                 <div class="col-12">
                     <h4 class="mb-3">
-                        <i data-feather="truck" size="16" class="mr-75 font-medium-4"></i>
-                        <span class="align-middle"> List Vehicules</span>
+                        <span class="align-middle"> </span>
                     </h4>
                 </div>
                 <div class="row">
@@ -72,15 +82,14 @@
                                     <a (click)="toggleSidebar('new-affectation-sidebar', row)" ngbDropdownItem>
                                         <span data-feather="edit" class="mr-50"></span> Modifier
                                     </a>
-                                    <a href="javascript:;" ngbDropdownItem (click)="confirmDeleteVehicle(row.id)">
+                                    <a href="javascript:;" ngbDropdownItem (click)="confirmDeleteVehicle(row.id); console.log(row)">
                                         <span data-feather="trash" class="mr-50"></span> Supprimer
-                                    </a>
+                                    </a>                                                               
                                 </div>
                             </div>
                         </ng-template>
                     </ngx-datatable-column>
                 </ngx-datatable>
-            </div>
         </section>
         <!--/ Vehicle List -->
     </div>

@@ -50,13 +50,13 @@ export class AuthService {
             data => {
                 if (!this.currentUser)
                     this.currentUser = new AppUser();
-                //console.log(this.currentUser);
+                console.log(this.currentUser);
                 this.currentUser.accessToken = data['accessToken'];
                 this.currentUser.refreshToken = data['refreshToken'];
 
                 let jwtHelper = new JwtHelperService();
                 let objJwt = jwtHelper.decodeToken(this.currentUser.accessToken);
-                //console.log(objJwt)
+                console.log(objJwt)
                 this.currentUser.username = objJwt.sub;
                 this.currentUser.roles = objJwt.roles;
                 this.currentUser.roles.forEach(role => {
@@ -169,7 +169,7 @@ export class AuthService {
                 this.router.navigate(['/']);
 
             }, error => {
-                //console.log(error);
+                console.log(error);
             });
     }
 

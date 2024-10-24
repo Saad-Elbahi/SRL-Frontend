@@ -75,11 +75,14 @@ const appRoutes: Routes = [
         }),
         RouterModule.forRoot(appRoutes, {
             useHash: true,
-            scrollPositionRestoration: 'enabled', // Add options right here
+            scrollPositionRestoration: 'enabled', 
             relativeLinkResolution: 'legacy'
         }),
         NgbModule,
-        ToastrModule.forRoot(),
+        ToastrModule.forRoot({
+            positionClass: 'toast-top-right', 
+            preventDuplicates: true,  
+          }),
         TranslateModule.forRoot(),
         ContextMenuModule,
         CoreModule.forRoot(coreConfig),

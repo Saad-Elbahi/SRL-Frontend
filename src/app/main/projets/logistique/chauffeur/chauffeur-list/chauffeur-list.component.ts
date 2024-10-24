@@ -55,13 +55,14 @@ export class ChauffeurListComponent implements OnInit {
     this._chauffeurService.onChauffeurListChanged.pipe(takeUntil(this._unsubscribeAll)).subscribe(
         data => {
           if(data && data.length>0) {
-            this.rows = data;
-            this.tempData = [...data];
+            this.rows = Array.from(data); 
+            this.tempData = Array.from(data); 
           }
         });
     this._chauffeurService.getAllChauffeurs();
 
   }
+ 
 
   filterUpdate(event): void {
     const val = event.target.value.toLowerCase();

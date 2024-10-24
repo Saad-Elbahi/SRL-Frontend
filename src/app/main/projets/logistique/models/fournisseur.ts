@@ -1,5 +1,10 @@
 export class Fournisseur {
   id: number;
-  groupName: string;
-  name: string;
+  abbreviationFournisseur: string;
+  intituleFournisseur: string;
+  adresseFournisseur: string;
+  ice:string;
+  email:string;
+  telephone:string;
+  contact:string;
 }
