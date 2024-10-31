@@ -367,101 +367,69 @@ export class VehiculeMouvementListComponent implements OnInit {
 
     //------------------------------------------------------------------imputation
     isInputsDisabled = false;
+    currentImputation: TripImputationDTO | null = null;
+    
     async getImputations(vehiculeRouteId: number, content: any) {
         try {
-            const data =
-                await this.vehiculeRouteService.getImputationByVehiculeRouteId(
-                    vehiculeRouteId
-                );
-            this.imputations = data as any[];
-            this.modalService.open(content, {size: "xl", centered: true});
+            const data = await this.vehiculeRouteService.getImputationByVehiculeRouteId(vehiculeRouteId);
+            this.imputations = data as TripImputationDTO[];
+            this.modalService.open(content, { size: 'xl', centered: true });
         } catch (error) {
             console.error("Error fetching imputations:", error);
         }
     }
-
+    
     openModals(content: any, route: VehiculeRoute) {
         this.selectedVehiculeRoute = route;
         this.vehiculeRouteId = route?.id;
-
+    
         if (!this.vehiculeRouteId) {
             console.error("Vehicule Route ID is missing, cannot open modal.");
             return;
         }
-
-        /*
-         public id: number,
-        public affaireId: number,
-        public fillingPercentage: number,
-        public observation: string,
-        public clientId: number,
-        public lotId: number,
-        public subContractorId: number,
-        public costImputation: number,
-        public isNew?: boolean,
-        public vehiculeRoute?: VehiculeRoute
-         */
+    
         this.vehiculeRouteService.imputationByVehiculeRoute(this.vehiculeRouteId).subscribe({
-                next: (imputations) => {
-                    if (Array.isArray(imputations)) {
-                        this.imputations = imputations.map((imputation) => {
-                            return new TripImputationDTO(
-                                imputation.id || null,
-                                imputation.affaireId,
-                                imputation.affaireCode,
-                                imputation.fillingPercentage || 0,
-                                imputation.observation || "",
-                                imputation.client ? imputation.client.id : null,
-                                imputation.lot ? imputation.lot.id : null,
-                                imputation.subContractorId,
-                                imputation.subContractorFullName,
-                                imputation.costImputation || 0
-                            );
-                        });
-                    } else {
-                        console.warn("Imputations data is not an array:", imputations);
-                        this.imputations = [];
-                    }
-
-                    this.modalService.open(content, {size: "xl", centered: true});
-                },
-                error: (error) => {
-                    console.error("Error fetching imputations:", error);
-                    Swal.fire({
-                        icon: "error",
-                        title: "Error Fetching Imputations",
-                        text: "Could not retrieve imputations for the selected route.",
-                    });
-                },
-            });
+            next: (imputations) => {
+                if (Array.isArray(imputations)) {
+                    this.imputations = imputations.map(imputation => new TripImputationDTO(
+                        imputation.id || null,
+                        imputation.affaireId,
+                        imputation.affaireCode,
+                        imputation.fillingPercentage || 0,
+                        imputation.observation || '',
+                        imputation.client?.id || null,
+                        imputation.lot?.id || null,
+                        imputation.subContractorId,
+                        imputation.subContractorFullName,
+                        imputation.costImputation || 0
+                    ));
+                } else {
+                    console.warn("Imputations data is not an array:", imputations);
+                    this.imputations = [];
+                }
+    
+                this.modalService.open(content, { size: "xl", centered: true });
+            },
+            error: (error) => {
+                console.error("Error fetching imputations:", error);
+                Swal.fire({
+                    icon: "error",
+                    title: "Error Fetching Imputations",
+                    text: "Could not retrieve imputations for the selected route.",
+                });
+            },
+        });
     }
-
-
+    
     addImputation() {
         const newImputation = new TripImputationDTO(
-            null,
-            null,
-            "",
-            0,
-            "",
-            null,
-            null,
-            null,
-            "",
-            0,
-            null,
-            null
+            null, null, "", 0, "", null, null, null, "", 0, null, null
         );
-
         this.imputations.push(newImputation);
     }
-
-
+    
     removeImputation(imputation: TripImputationDTO): void {
-        console.log("Remove button clicked for:", imputation);
-
         const isNew = !imputation.id;
-
         Swal.fire({
             title: 'Êtes-vous sûr ?',
             text: isNew ? 'Cette imputation sera supprimée sans être enregistrée.' : 'Cette imputation sera définitivement supprimée !',
@@ -474,35 +442,24 @@ export class VehiculeMouvementListComponent implements OnInit {
         }).then((result) => {
             if (result.isConfirmed) {
                 if (isNew) {
-                    const index = this.imputations.indexOf(imputation);
-                    if (index > -1) {
-                        this.imputations.splice(index, 1);
-                    }
+                    this.imputations = this.imputations.filter(i => i !== imputation);
                     Swal.fire('Supprimé !', 'L\'imputation a été supprimée.', 'success');
                 } else {
                     this.vehiculeRouteService.deleteImputation(imputation.id).subscribe({
                         next: () => {
-                            const index = this.imputations.indexOf(imputation);
-                            if (index > -1) {
-                                this.imputations.splice(index, 1);
-                            }
+                            this.imputations = this.imputations.filter(i => i !== imputation);
                             Swal.fire('Supprimé !', 'L\'imputation a été supprimée.', 'success');
                         },
                         error: (error) => {
                             console.error("Erreur lors de la suppression de l'imputation :", error);
-                            if (error.status === 404) {
-                                Swal.fire('Non trouvé !', 'L\'imputation que vous essayez de supprimer n\'existe pas.', 'error');
-                            } else {
-                                Swal.fire('Erreur !', 'Il y a eu un problème lors de la suppression de l\'imputation.', 'error');
-                            }
+                            Swal.fire('Erreur !', 'Il y a eu un problème lors de la suppression de l\'imputation.', 'error');
                         }
                     });
                 }
             }
         });
     }
-
-
+    
     saveImputationAssociation() {
         if (!this.vehiculeRouteId) {
             Swal.fire({
@@ -522,19 +479,7 @@ export class VehiculeMouvementListComponent implements OnInit {
             return;
         }
     
-        let totalFillingPercentage = 0;
-        for (const imputation of this.imputations) {
-            if (imputation.fillingPercentage > 100) {
-                Swal.fire({
-                    icon: "error",
-                    title: `Invalid Filling Percentage`,
-                    text: `Filling percentage cannot be more than 100%.`,
-                });
-                return;
-            }
-            totalFillingPercentage += imputation.fillingPercentage;
-        }
-    
+        const totalFillingPercentage = this.imputations.reduce((sum, imp) => sum + imp.fillingPercentage, 0);
         if (totalFillingPercentage > 100) {
             Swal.fire({
                 icon: "error",
@@ -551,66 +496,68 @@ export class VehiculeMouvementListComponent implements OnInit {
             showCancelButton: true,
             confirmButtonText: "Yes, save it!",
             cancelButtonText: "No, cancel!",
-        }).then((result) => {
+        }).then(async (result) => {
             if (result.isConfirmed) {
-                const imputationRequest: ImputationRequestDTO = {
-                    vehiculeRouteId: this.vehiculeRouteId,
-                    imputations: this.imputations.map((imputation) => {
-                        return {
-                            id: imputation.id,
-                            affaireId: imputation.affaireId,
-                            affaireCode: "",
-                            fillingPercentage: imputation.fillingPercentage,
-                            observation: imputation.observation,
-                            clientId: imputation.clientId,
-                            lotId: imputation.lotId,
-                            subContractorId: imputation.subContractorId,
-                            subContractorFullName: "",
-                            costImputation: imputation.costImputation,
+                // Separate new and existing imputations
+                const newImputations = this.imputations.filter(imp => !imp.id);
+                const existingImputations = this.imputations.filter(imp => imp.id);
+    
+                try {
+                    // Process new imputations
+                    if (newImputations.length > 0) {
+                        const imputationRequest: ImputationRequestDTO = {
+                            vehiculeRouteId: this.vehiculeRouteId,
+                            imputations: newImputations.map((imputation) => ({
+                                id: imputation.id,
+                                affaireId: imputation.affaireId,
+                                fillingPercentage: imputation.fillingPercentage,
+                                observation: imputation.observation,
+                                clientId: imputation.clientId,
+                                lotId: imputation.lotId,
+                                subContractorId: imputation.subContractorId,
+                                costImputation: imputation.costImputation,
+                                affaireCode: imputation.affaireCode || "",
+                                subContractorFullName: imputation.subContractorFullName || ""
+                            })),
                         };
-                    }),
-                };
     
-                console.log("Imputation Request Payload:", imputationRequest);
+                        await this.vehiculeRouteService.associateImputation(imputationRequest).toPromise();
+                    }
     
-                this.vehiculeRouteService.associateImputation(imputationRequest)
-                    .subscribe({
-                        next: (vehiculeRoute: VehiculeRoute) => {
-                            console.log("Updated Vehicule Route:", vehiculeRoute);
+                    // Process existing imputations
+                    for (const imputation of existingImputations) {
+                        await this.vehiculeRouteService.updateImputation(imputation);
+                    }
     
-                            this.imputations.forEach(imputation => imputation.isSaved = true);
-                            this.isInputsDisabled = true; 
+                    // Mark all imputations as saved and disable inputs
+                    this.imputations.forEach(imputation => imputation.isSaved = true);
+                    this.isInputsDisabled = true;
     
-                            Swal.fire("Success!", "Imputations associated successfully.", "success");
+                    Swal.fire("Success!", "Imputations associated and updated successfully.", "success");
     
-                            
-                        },
-                        error: (error) => {
-                            Swal.fire({
-                                icon: "error",
-                                title: "Error",
-                                text: "There was an error associating imputations.",
-                            });
-                            console.error("Error associating imputations:", error);
-                        },
+                    // Ensure table remains visible if controlled by variable
+                    
+                } catch (error) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "There was an error saving or updating imputations.",
                     });
+                    console.error("Error saving or updating imputations:", error);
+                }
             }
         });
     }
     
     
+    
     getTotalCostImputation(): number {
-        return this.imputations.reduce(
-            (total, imputation) => total + (imputation.costImputation || 0),
-            0
-        );
+        return this.imputations.reduce((total, imputation) => total + (imputation.costImputation || 0), 0);
     }
-    isInputDisabled = true; 
-    currentImputation: TripImputationDTO | null = null; 
     
     enableEdit(imputation: TripImputationDTO) {
-        this.isInputsDisabled = false; 
-        this.currentImputation = imputation; 
+        this.isInputsDisabled = false;
+        this.currentImputation = imputation;
     }
 
 

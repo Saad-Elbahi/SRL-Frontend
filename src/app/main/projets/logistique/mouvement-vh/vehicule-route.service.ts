@@ -308,18 +308,19 @@ export class VehiculeRouteService {
       );
   }
   updateImputation(dto: TripImputationDTO): Promise<any> {
-    const url = environment.tripimpapi + "/updateImputation";
+    const url = `${environment.tripimpapi}/updateImputation/${dto.id}`; 
 
     return new Promise((resolve, reject) => {
-      this.srManagerService.putRessource(url, dto).subscribe(
-        (response: any) => {
-          this.onMouvementsListChanged.next(response);
-          resolve(response);
-        },
-        (error) => {
-          reject(error);
-        }
-      );
+        this.srManagerService.putRessource(url, dto).subscribe(
+            (response: any) => {
+                this.onMouvementsListChanged.next(response);
+                resolve(response);
+            },
+            (error) => {
+                reject(error);
+            }
+        );
     });
-  }
+}
+
 }
