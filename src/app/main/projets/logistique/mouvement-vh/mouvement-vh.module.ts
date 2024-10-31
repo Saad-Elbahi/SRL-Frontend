@@ -11,11 +11,13 @@ import {NgSelectModule} from "@ng-select/ng-select";
 import {NgxDatatableModule} from "@swimlane/ngx-datatable";
 import {CoreCommonModule} from "../../../../../@core/common.module";
 import {NgbDropdownModule} from "@ng-bootstrap/ng-bootstrap";
+import { RecapImputationComponent } from './recap-imputation/recap-imputation.component';
 
 const routes: Routes = [
   {path: "dashboardM", component: DashboardMouvementComponent,},
   { path: "mouvement-list", component: VehiculeMouvementListComponent },
   { path: "association", component: VehiculeRouteAssociateComponent },
+  { path: "recap-imputation", component: RecapImputationComponent },
   { path: "", redirectTo: "mouvement-list", pathMatch: "full" },
   { path: "**", redirectTo: "mouvement-list" },
 ];
@@ -24,7 +26,8 @@ const routes: Routes = [
     declarations: [
         DashboardMouvementComponent,
         VehiculeMouvementListComponent,
-        VehiculeRouteAssociateComponent,],
+        VehiculeRouteAssociateComponent,
+        RecapImputationComponent,],
     exports: [
         DashboardMouvementComponent
     ],

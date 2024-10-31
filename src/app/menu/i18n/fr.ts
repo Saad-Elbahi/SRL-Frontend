@@ -45,6 +45,7 @@ export const locale = {
                 SECTION: "Logistique",
                 DASHBOARDMVT:"Dashboard",
                 MOUVEMENT:"Mouvement VH",
+                RECAP:"Recap Imputation",
                 VEHICULE:"Véhicules",
                 AFFAIRE:"Affaires",
                 CHAUFFEUR:"Chauffeurs",

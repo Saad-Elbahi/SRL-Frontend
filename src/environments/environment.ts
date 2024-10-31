@@ -13,6 +13,8 @@ export const environment = {
     authCmdHost: 'http://localhost:6108/jwt/commands',
     authQueryHost: 'http://localhost:6108/jwt/queries',
 
+    subContractorCmdHost: 'https://node118212-env-sr-str.jcloud-ver-jpe.ik-server.com/subcontractors/commands',
+    subContractorQueryHost: 'https://node118212-env-sr-str.jcloud-ver-jpe.ik-server.com/soustraitances/queries/byMarche/',
 //Logistique
     affaireapi: "http://localhost:6201/affaireapi",
     chauffeurapi: "http://localhost:6201/chauffeurapi",

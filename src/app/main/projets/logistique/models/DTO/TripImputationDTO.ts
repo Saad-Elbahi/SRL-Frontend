@@ -3,13 +3,16 @@ export class TripImputationDTO {
     constructor(
         public id: number, 
         public affaireId: number,
+        public affaireCode: string,
         public fillingPercentage: number,
         public observation: string,
         public clientId: number, 
         public lotId: number, 
-        public soustraitantId: number, 
+        public subContractorId: number,
+        public subContractorFullName: string,
         public costImputation: number,
         public isNew?: boolean,
-        public vehiculeRoute?: VehiculeRoute 
+        public vehiculeRoute?: VehiculeRoute ,
+        public isSaved?: boolean
     ) {}
 }

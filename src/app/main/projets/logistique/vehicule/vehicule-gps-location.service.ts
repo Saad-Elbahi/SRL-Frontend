@@ -1,7 +1,8 @@
 import { Injectable } from "@angular/core";
 import { environment } from "../../../../../environments/environment";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, Observable, throwError } from "rxjs";
 import { SrManagerService } from "../../sr-manager.service";
+import { catchError, tap } from "rxjs/operators";
 
 @Injectable({
   providedIn: "root",
@@ -68,30 +69,25 @@ export class VehiculeGpsLocationService {
     });
   }
 
-  deleteVehicule(id: number): Promise<any[]> {
+  deleteVehicule(id: number): Observable<any> {
     if (!id) {
         console.error('Cannot delete vehicle. Invalid vehicle ID:', id);
-        return Promise.reject('Invalid vehicle ID');
+        return throwError(() => new Error('Invalid vehicle ID'));
     }
 
     const url = `${environment.vhgpsapi}/deleteVehicule/${id}`;
+    
+    return this.srManagerService.deleteRessource(url).pipe(
+        tap((response) => this.onVehiculeListChanged.next(response)),
+        catchError((error) => {
+            console.error('Error deleting vehicle:', error.status, error.message);
+            return throwError(() => new Error(error.message || 'Error deleting vehicle'));
+        })
+    );
+}
 
-    return new Promise((resolve, reject) => {
-        this.srManagerService
-            .deleteRessource(url)
-            .subscribe(
-                (response: any[]) => {
-                    this.onVehiculeListChanged.next(response);
-                    resolve(response);
-                },
-                (error) => {
-                    console.error('Error deleting vehicle:', error.status, error.message);
-                    reject(error);
-                }
-            );
-    });
 }
 
 
 
-}
+

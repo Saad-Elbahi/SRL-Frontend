@@ -97,17 +97,17 @@ export class VehiculeListComponent implements OnInit {
 
     confirmDeleteVehicle(id: number): void {
         if (!id) {
-            console.error('Invalid vehicle ID:', id);
-            return; // Exit if vehiculeId is undefined or invalid
+            console.error('ID de véhicule invalide:', id);
+            return; // Quitter si l'ID du véhicule est indéfini ou invalide
         }
     
         Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
+            title: 'Êtes-vous sûr(e) ?',
+            text: "Vous ne pourrez pas annuler cette action !",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'No, cancel!',
+            confirmButtonText: 'Oui, supprimez-le !',
+            cancelButtonText: 'Non, annuler !',
             customClass: {
                 confirmButton: 'btn btn-primary',
                 cancelButton: 'btn btn-danger ml-1'
@@ -117,8 +117,8 @@ export class VehiculeListComponent implements OnInit {
                 this.deleteVehicule(id);
             } else if (result.dismiss === Swal.DismissReason.cancel) {
                 Swal.fire({
-                    title: 'Not Cancelled',
-                    text: 'Your vehicle is safe :)',
+                    title: 'Non annulé',
+                    text: 'Votre véhicule est en sécurité :)',
                     icon: 'error',
                     customClass: {
                         confirmButton: 'btn btn-success'
@@ -128,31 +128,31 @@ export class VehiculeListComponent implements OnInit {
         });
     }
     
-    
     deleteVehicule(id: number): void {
-        this.vehiculeGpsLocationService.deleteVehicule(id).then(() => {
-            // Refresh the list of vehicles here if needed
-            Swal.fire({
-                title: 'Deleted!',
-                text: 'The vehicle has been deleted.',
-                icon: 'success',
-                customClass: {
-                    confirmButton: 'btn btn-success'
-                }
-            });
-        }).catch((error) => {
-            Swal.fire({
-                title: 'Error!',
-                text: `An error occurred while deleting the vehicle: ${error.status} - ${error.message || 'Unknown error'}`,
-                icon: 'error',
-                customClass: {
-                    confirmButton: 'btn btn-danger'
-                }
-            });
-            console.error('Deletion error:', error); // Log the error details for debugging
+        this.vehiculeGpsLocationService.deleteVehicule(id).subscribe({
+            next: (response) => {
+                // Rafraîchir la liste des véhicules ici si nécessaire
+                Swal.fire({
+                    title: 'Supprimé !',
+                    text: 'Le véhicule a été supprimé.',
+                    icon: 'success',
+                    customClass: {
+                        confirmButton: 'btn btn-success'
+                    }
+                });
+            },
+            error: (error) => {
+                Swal.fire({
+                    title: 'Erreur !',
+                    text: `Une erreur est survenue lors de la suppression du véhicule : ${error.status} - ${error.message || 'Erreur inconnue'}`,
+                    icon: 'error',
+                    customClass: {
+                        confirmButton: 'btn btn-danger'
+                    }
+                });
+                console.error('Erreur de suppression :', error); // Détails de l'erreur pour le débogage
+            }
         });
     }
     
-
-
 }

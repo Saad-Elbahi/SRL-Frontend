@@ -26,7 +26,7 @@ export const menu: CoreMenu[] = [
             },
             {
                 id: 'mouvement',
-                title: 'mouvement',
+                title: 'Mouvement',
                 translate: 'MENU.LOGISTIQUE.MOUVEMENT',
                 type: 'item',
                 roles: [Role.ADMIN,Role.PDG, Role.DGA ,Role.RESP_LOG,Role.ASSIST_LOG],
@@ -34,8 +34,17 @@ export const menu: CoreMenu[] = [
                 url: 'projets/logistique/mouvementVh/mouvement-list'
             },
             {
+                id: 'recap',
+                title: 'Recap Imputation',
+                translate: 'MENU.LOGISTIQUE.RECAP',
+                type: 'item',
+                roles: [Role.ADMIN,Role.PDG, Role.DGA ,Role.RESP_LOG,Role.ASSIST_LOG],
+                icon: 'slack',
+                url: 'projets/logistique/mouvementVh/recap-imputation'
+            },
+            {
                 id: 'vehicule',
-                title: 'vehicule',
+                title: 'Vehicule',
                 translate: 'MENU.LOGISTIQUE.VEHICULE',
                 type: 'item',
                 roles: [Role.ADMIN,Role.PDG, Role.DGA ,Role.RESP_LOG,Role.ASSIST_LOG],

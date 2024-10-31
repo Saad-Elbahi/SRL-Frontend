@@ -303,8 +303,11 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Details Imputation</h5>
-                <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-            </div>
+                <button type="button" class="btn btn-close btn-lg" aria-label="Close" (click)="modal.dismiss()">
+                    <span aria-hidden="true" style="font-size: 1.5rem;">&times;</span> 
+                </button>
+            </div>            
+            
             <div class="modal-body">
                 <form (ngSubmit)="saveImputationAssociation()">
                     <div class="table-responsive">
@@ -317,90 +320,106 @@
                                     <th>Client</th>
                                     <th>Lot</th>
                                     <th>Soustraitant</th>
+                                    <th>Cost</th> 
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr *ngFor="let imputation of imputations; let i = index">
-                                    <!-- Affaire Selection -->
                                     <td>
                                         <select class="form-control custom-input-select"
-                                            [(ngModel)]="imputation.affaireId" name="affaire_{{i}}" required>
+                                                [(ngModel)]="imputation.affaireId"
+                                                name="affaire_{{i}}"
+                                                required
+                                                (change)="onAffaireChanged(imputation.affaireId)"
+                                                [disabled]="isInputsDisabled || imputation.isSaved"> 
                                             <option *ngFor="let affaire of affaires" [ngValue]="affaire.id">
                                                 {{ affaire.code }}
                                             </option>
                                         </select>
                                     </td>
-
-                                    <!-- Filling Percentage Input -->
+                                
                                     <td>
-                                        <div class="input-group">
-                                            <input type="number" class="form-control form-control-lg custom-input"
-                                                [(ngModel)]="imputation.fillingPercentage"
-                                                (ngModelChange)="updateImputation(imputation, $event)"
-                                                name="fillingPercentage_{{i}}" required min="0" max="100" step="0.01"
-                                                aria-label="Filling Percentage" />
-                                            <div class="input-group-append">
-                                                <span class="input-group-text">%</span>
-                                            </div>
-                                        </div>
+                                        <input type="number" class="form-control form-control-lg custom-input"
+                                               [(ngModel)]="imputation.fillingPercentage"
+                                               (ngModelChange)="updateImputation(imputation)"
+                                               name="fillingPercentage_{{i}}"
+                                               required min="0" max="100" step="0.01"
+                                               aria-label="Filling Percentage" 
+                                               [disabled]="isInputsDisabled || imputation.isSaved"/>
                                     </td>
-
-                                    <!-- Observation -->
+                                    
                                     <td>
-                                        <input type="text" class="form-control" [(ngModel)]="imputation.observation"
-                                            name="observation_{{i}}" />
+                                        <input type="text" class="form-control"
+                                               [(ngModel)]="imputation.observation"
+                                               name="observation_{{i}}"
+                                               [disabled]="isInputsDisabled || imputation.isSaved"/> 
                                     </td>
-
+                                
                                     <td>
                                         <select class="form-control custom-input-select"
-                                            [(ngModel)]="imputation.clientId" name="client_{{i}}" required>
+                                                [(ngModel)]="imputation.clientId"
+                                                name="client_{{i}}"
+                                                required
+                                                [disabled]="isInputsDisabled || imputation.isSaved"> 
                                             <option *ngFor="let client of clients" [ngValue]="client.id">
                                                 {{ client.name }}
                                             </option>
                                         </select>
                                     </td>
-
-                                    <!-- Lot Dropdown -->
+                                
                                     <td>
-                                        <select class="form-control custom-input-select" [(ngModel)]="imputation.lotId"
-                                            name="lot_{{i}}">
+                                        <select class="form-control custom-input-select"
+                                                [(ngModel)]="imputation.lotId"
+                                                name="lot_{{i}}"
+                                                [disabled]="isInputsDisabled || imputation.isSaved"> 
                                             <option *ngFor="let lot of lots" [ngValue]="lot.id">
                                                 {{ lot.name }}
                                             </option>
                                         </select>
                                     </td>
-
-                                    <!-- Soustraitant Dropdown -->
+                                
                                     <td>
                                         <select class="form-control custom-input-select"
-                                            [(ngModel)]="imputation.soustraitantId" name="soustraitant_{{i}}">
-                                            <option *ngFor="let soustraitant of soustraitants"
-                                                [ngValue]="soustraitant.id">
-                                                {{ soustraitant.fullName }}
+                                                (change)="onSubcontractorChanged(imputation.subContractorId)"
+                                                [(ngModel)]="imputation.subContractorId"
+                                                name="soustraitant_{{i}}"
+                                                [disabled]="isInputsDisabled || imputation.isSaved"> 
+                                            <option *ngFor="let soustraitant of soustraitants" [ngValue]="soustraitant.id">
+                                                {{ soustraitant?.fullName }}
                                             </option>
                                         </select>
                                     </td>
-
-                                    <!-- Remove Imputation -->
+                                
                                     <td>
-                                        <button type="button" class="btn btn-danger"
-                                            (click)="removeImputation(imputation)">
-                                            Supprimer
-                                        </button>
+                                        <span>{{ imputation.costImputation | number:'1.2-2' }} MAD</span>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="4" class="text-right"><strong>Total Imputation:</strong></td>
-                                    <td><strong style="color: orange;">{{ getTotalCostImputation() | number:'1.2-2' }}
-                                            MAD</strong></td>
+                                
+                                    <td>
+                                        <div ngbDropdown class="dropdown">
+                                            <button ngbDropdownToggle class="btn btn-light" type="button" >
+                                                &#x22EE; 
+                                            </button>
+                                            <div ngbDropdownMenu>
+                                                <a class="dropdown-item text-warning" (click)="enableEdit(imputation)" 
+                                                   > 
+                                                    Editer
+                                                </a>
+                                                <a class="dropdown-item text-danger" (click)="removeImputation(imputation)" 
+                                                   > 
+                                                    Supprimer
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
                                 </tr>
                             </tbody>
+                            
+                            <!-- Add Imputation Button -->
+                            <button type="button" class="btn btn-success" (click)="addImputation()">+</button>
                         </table>
                     </div>
-
-                    <!-- Add Imputation Button -->
-                    <button type="button" class="btn btn-success" (click)="addImputation()">Ajouter Imputation</button>
 
                     <!-- Save Imputation Button -->
                     <button type="submit" class="btn btn-primary">Sauvegarder Imputation</button>
@@ -409,6 +428,8 @@
         </div>
     </div>
 </ng-template>
+
+
 
 
 
@@ -438,7 +459,7 @@
                         <tbody>
                             <tr *ngFor="let fromMouvement of fromMouvements">
                                 <td>{{ fromMouvement.affaire?.code || 'N/A' }}</td>
-                                <td>{{ fromMouvement.fournisseur?.name || 'N/A' }}</td>
+                                <td>{{ fromMouvement.fournisseur?.intituleFournisseur || 'N/A' }}</td>
                                 <td>{{ fromMouvement.bl || 'N/A' }}</td>
                                 <td>{{ fromMouvement.blMontant | currency: 'MAD' }}</td>
                                 <td>{{ fromMouvement.dateBl | date: 'yyyy-MM-dd' }}</td>

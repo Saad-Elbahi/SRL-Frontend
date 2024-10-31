@@ -11,6 +11,7 @@ import { UpdateFillingPercentageDTO } from "../models/DTO/UpdateFillingPercentag
 import { PerformanceOverTimeRequestDTO } from "../models/DTO/PerformanceOverTimeRequestDTO";
 import { UpdateMouvementDTO } from "../models/DTO/UpdateMouvementDTO";
 import { FromMouvementDTO } from "../models/DTO/FromMouvementDTO";
+import { TripImputationDTO } from "../models/DTO/TripImputationDTO";
 
 @Injectable({
   providedIn: "root",
@@ -140,9 +141,7 @@ export class VehiculeRouteService {
   }
 
   //A Refaire
-  associateImputation(
-    imputationRequest: ImputationRequestDTO
-  ): Observable<VehiculeRoute> {
+  associateImputation(imputationRequest: ImputationRequestDTO): Observable<VehiculeRoute> {
     const url = `${environment.vhrouteapi}/associateImputation`;
     //const headers = new HttpHeaders({ "Content-Type": "application/json" });
 
@@ -237,19 +236,23 @@ export class VehiculeRouteService {
     });
   }
 
-  getSoustraitants() {
+  getSoustraitants(projectId: number) {
+    console.log('Subcontractors byProject==>' + projectId);
     return new Promise((resolve, reject) => {
-      const url = `${environment.soustraitantapi}/allSoustraitant`;
-      this.srManagerService.getResource(url).subscribe(
-        (response) => {
-          resolve(response);
-        },
-        (error) => {
-          reject(error);
-        }
-      );
+        const url = `${environment.soustraitantapi}/soustraitants/` + projectId;
+        this.srManagerService.getResource(url).subscribe(
+            (response) => {
+                resolve(response);
+            },
+            (error) => {
+                reject(error);
+            }
+        );
     });
-  }
+}
+
+   
+
 
   getImputationByVehiculeRouteId(vehiculeRouteId: number) {
     return new Promise((resolve, reject) => {
@@ -303,5 +306,20 @@ export class VehiculeRouteService {
           return throwError(error);
         })
       );
+  }
+  updateImputation(dto: TripImputationDTO): Promise<any> {
+    const url = environment.tripimpapi + "/updateImputation";
+
+    return new Promise((resolve, reject) => {
+      this.srManagerService.putRessource(url, dto).subscribe(
+        (response: any) => {
+          this.onMouvementsListChanged.next(response);
+          resolve(response);
+        },
+        (error) => {
+          reject(error);
+        }
+      );
+    });
   }
 }
