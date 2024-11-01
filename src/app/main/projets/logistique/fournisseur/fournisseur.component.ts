@@ -80,12 +80,12 @@ export class FournisseurComponent implements OnInit {
     });
   }
 
-  addNewRecord(): void {
+ /*  addNewRecord(): void {
     this.fournisseurService.saveFournisseurFromApi().then(() => {
       this.toastr.success('Fournisseur added successfully!');
       //this.refreshPage();
     });
-  }
+  } */
 
   private refreshPage(): void {
     this.router.navigateByUrl('/', {skipLocationChange: true}).then(() => {

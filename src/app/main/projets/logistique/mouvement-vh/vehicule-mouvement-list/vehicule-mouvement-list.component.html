@@ -214,9 +214,11 @@
         <div class="modal-content">
             <!-- Modal Header -->
             <div class="modal-header">
-                <h5 class="modal-title">Details From -> To</h5>
-                <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
-            </div>
+                <h5 class="modal-title">Details From </h5>
+                <button type="button" class="btn btn-close btn-lg" aria-label="Close" (click)="modal.dismiss()">
+                    <span aria-hidden="true" style="font-size: 1.5rem;">&times;</span> 
+                </button>
+            </div>      
 
             <!-- Modal Body -->
             <div class="modal-body">
@@ -271,11 +273,24 @@
                                             required />
                                     </td>
 
-                                    <td>
+                                   <!--  <td>
                                         <button type="button" class="btn btn-danger btn-sm"
                                             (click)="removeFromMouvement(fromMouvement)">
                                             Supprimer
                                         </button>
+                                    </td> -->
+                                    <td>
+                                        <div ngbDropdown class="dropdown">
+                                            <button ngbDropdownToggle class="btn btn-light" type="button" >
+                                                &#x22EE; 
+                                            </button>
+                                            <div ngbDropdownMenu>
+                                                <a class="dropdown-item text-danger"  (click)="removeFromMouvement(fromMouvement)" 
+                                                   > 
+                                                    Supprimer
+                                                </a>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>

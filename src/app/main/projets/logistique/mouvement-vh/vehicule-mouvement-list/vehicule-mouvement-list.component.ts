@@ -535,7 +535,6 @@ export class VehiculeMouvementListComponent implements OnInit {
     
                     Swal.fire("Success!", "Imputations associated and updated successfully.", "success");
     
-                    // Ensure table remains visible if controlled by variable
                     
                 } catch (error) {
                     Swal.fire({
