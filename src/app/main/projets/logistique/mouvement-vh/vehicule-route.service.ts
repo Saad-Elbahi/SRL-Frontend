@@ -143,10 +143,12 @@ export class VehiculeRouteService {
   //A Refaire
   associateImputation(imputationRequest: ImputationRequestDTO): Observable<VehiculeRoute> {
     const url = `${environment.vhrouteapi}/associateImputation`;
-    //const headers = new HttpHeaders({ "Content-Type": "application/json" });
-
+    console.log("Sending request to:", url);
+    console.log("Request payload:", imputationRequest);
+  
     return this.srManagerService.postRessource(url, imputationRequest);
   }
+  
 
   imputationByVehiculeRoute(vehiculeRouteId: number): Observable<any[]> {
     // @ts-ignore
@@ -307,7 +309,7 @@ export class VehiculeRouteService {
         })
       );
   }
-  updateImputation(dto: TripImputationDTO): Promise<any> {
+/*   updateImputation(dto: TripImputationDTO): Promise<any> {
     const url = `${environment.tripimpapi}/updateImputation/${dto.id}`; 
 
     return new Promise((resolve, reject) => {
@@ -322,5 +324,9 @@ export class VehiculeRouteService {
         );
     });
 }
-
+ */
+updateImputation(dto: TripImputationDTO): Observable<any> {
+  const url = `${environment.tripimpapi}/updateImputation/${dto.id}`;
+  return this.srManagerService.putRessource(url, dto);
+}
 }

@@ -1,375 +1,387 @@
-import {ColumnMode} from "@swimlane/ngx-datatable";
+import { ColumnMode } from "@swimlane/ngx-datatable";
 
 import {
-    ChangeDetectorRef,
-    Component,
-    OnInit,
-    TemplateRef,
-    ViewEncapsulation,
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  TemplateRef,
+  ViewChild,
+  ViewEncapsulation,
 } from "@angular/core";
 import Swal from "sweetalert2";
-import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {ToastrService} from "ngx-toastr";
+import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { ToastrService } from "ngx-toastr";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
-import {AbstractControl, ValidatorFn} from "@angular/forms";
-import {Subject} from "rxjs";
-import {takeUntil} from "rxjs/operators";
-import {FromMouvement} from "../../models/FromMouvement";
-import {TripImputation} from "../../models/TripImputation";
-import {VehiculeRoute} from "../../models/vehicule-route";
-import {Affaire} from "../../models/affaire.model";
-import {Fournisseur} from "../../models/fournisseur";
-import {VehiculeRouteService} from "../vehicule-route.service";
-import {AffaireService} from "../../affaire/affaire.service";
-import {FournisseurService} from "../../fournisseur/fournisseur.service";
-import {AssociateFromToRequestDTO} from "../../models/DTO/AssociateFromToRequestDTO";
-import {ImputationRequestDTO} from "../../models/DTO/ImputationRequestDTO";
-import {UpdateFillingPercentageDTO} from "../../models/DTO/UpdateFillingPercentageDTO";
-import {UpdateMouvementDTO} from "../../models/DTO/UpdateMouvementDTO";
-import {TripImputationDTO} from "../../models/DTO/TripImputationDTO";
-import {Client} from "../../models/client";
-import {Lot} from "../../models/lot";
-import {Soustraitant} from "../../models/soustraitant";
+import { AbstractControl, ValidatorFn } from "@angular/forms";
+import { Subject } from "rxjs";
+import { take, takeUntil } from "rxjs/operators";
+import { FromMouvement } from "../../models/FromMouvement";
+import { TripImputation } from "../../models/TripImputation";
+import { VehiculeRoute } from "../../models/vehicule-route";
+import { Affaire } from "../../models/affaire.model";
+import { Fournisseur } from "../../models/fournisseur";
+import { VehiculeRouteService } from "../vehicule-route.service";
+import { AffaireService } from "../../affaire/affaire.service";
+import { FournisseurService } from "../../fournisseur/fournisseur.service";
+import { AssociateFromToRequestDTO } from "../../models/DTO/AssociateFromToRequestDTO";
+import { ImputationRequestDTO } from "../../models/DTO/ImputationRequestDTO";
+import { UpdateFillingPercentageDTO } from "../../models/DTO/UpdateFillingPercentageDTO";
+import { UpdateMouvementDTO } from "../../models/DTO/UpdateMouvementDTO";
+import { TripImputationDTO } from "../../models/DTO/TripImputationDTO";
+import { Client } from "../../models/client";
+import { Lot } from "../../models/lot";
+import { Soustraitant } from "../../models/soustraitant";
 
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 export interface AssociateRequest {
-    fromMouvements: FromMouvement[];
-    toAffaireId: number;
-    imputations: TripImputation[];
+  fromMouvements: FromMouvement[];
+  toAffaireId: number;
+  //  imputations: TripImputation[];
 }
 
 export function fromMouvementValidator(): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: boolean } | null => {
-        const fournisseurs = control.get("fournisseurs")?.value;
-        const affaire = control.get("affaire")?.value;
+  return (control: AbstractControl): { [key: string]: boolean } | null => {
+    const fournisseurs = control.get("fournisseurs")?.value;
+    const affaire = control.get("affaire")?.value;
 
-        if (
-            fournisseurs &&
-            fournisseurs.length > 0 &&
-            affaire &&
-            affaire.length > 0
-        ) {
-            return {bothProvided: true};
-        }
-        if (!fournisseurs && !affaire) {
-            return {noneProvided: true};
-        }
+    if (
+      fournisseurs &&
+      fournisseurs.length > 0 &&
+      affaire &&
+      affaire.length > 0
+    ) {
+      return { bothProvided: true };
+    }
+    if (!fournisseurs && !affaire) {
+      return { noneProvided: true };
+    }
 
-        return null;
-    };
+    return null;
+  };
 }
 
 @Component({
-    selector: "app-vehicule-mouvement-list",
-    templateUrl: "./vehicule-mouvement-list.component.html",
-    styleUrls: ["./vehicule-mouvement-list.component.scss"],
-    encapsulation: ViewEncapsulation.None,
+  selector: "app-vehicule-mouvement-list",
+  templateUrl: "./vehicule-mouvement-list.component.html",
+  styleUrls: ["./vehicule-mouvement-list.component.scss"],
+  encapsulation: ViewEncapsulation.None,
 })
 export class VehiculeMouvementListComponent implements OnInit {
-    public ColumnMode = ColumnMode;
+  public ColumnMode = ColumnMode;
 
-    private _unsubscribeAll: Subject<any>;
+  private _unsubscribeAll: Subject<any>;
 
-    selectedRow: any = null;
-    selectedFile: File | null = null;
-    clients: Client[] = [];
-    lots: Lot[] = [];
-    soustraitants: Soustraitant[] = [];
-    //-------------------------------------------------------
-    vehiculeRoutes: VehiculeRoute[] = [];
-    filteredRoutes: VehiculeRoute[] = [];
-    fromMouvements: FromMouvement[] = [];
-    affaires: Affaire[] = [];
-    fournisseurs: Fournisseur[] = [];
-    toAffaireId: number | null = null;
-    selectedVehiculeRoute: VehiculeRoute | null = null;
-    filterDate?: string;
-    filterVehiculeName: string = "";
-    // Define a map to track disabled states for each fromMouvement
-    disabledStates: {
-        [key: number]: { disableFournisseur: boolean; disableAffaire: boolean };
-    } = {};
-    //--------------------------------------------
-    vehiculeRouteId: number | undefined;
-    imputations: TripImputationDTO[] = [];
-    //-----------------------------------------------
-    filterType: string = "";
-    rows: VehiculeRoute[] = [];
+  selectedRow: any = null;
+  selectedFile: File | null = null;
+  clients: Client[] = [];
+  lots: Lot[] = [];
+  soustraitants: Soustraitant[] = [];
+  //-------------------------------------------------------
+  vehiculeRoutes: VehiculeRoute[] = [];
+  filteredRoutes: VehiculeRoute[] = [];
+  fromMouvements: FromMouvement[] = [];
+  affaires: Affaire[] = [];
+  fournisseurs: Fournisseur[] = [];
+  toAffaireId: number | null = null;
+  selectedVehiculeRoute: VehiculeRoute | null = null;
+  filterDate?: string;
+  filterVehiculeName: string = "";
+  // Define a map to track disabled states for each fromMouvement
+  disabledStates: {
+    [key: number]: { disableFournisseur: boolean; disableAffaire: boolean };
+  } = {};
+  //--------------------------------------------
+  vehiculeRouteId: number | undefined;
+  imputations: TripImputationDTO[] = [];
+  //-----------------------------------------------
+  filterType: string = "";
+  rows: VehiculeRoute[] = [];
 
-    constructor(
-        private vehiculeRouteService: VehiculeRouteService,
-        private affaireService: AffaireService,
-        private fournisseurService: FournisseurService,
-        private modalService: NgbModal,
-        private toastr: ToastrService,
-        private cdr: ChangeDetectorRef
-    ) {
-        this._unsubscribeAll = new Subject();
-    }
+  constructor(
+    private vehiculeRouteService: VehiculeRouteService,
+    private affaireService: AffaireService,
+    private fournisseurService: FournisseurService,
+    private modalService: NgbModal,
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef
+  ) {
+    this._unsubscribeAll = new Subject();
+  }
 
-    ngOnInit(): void {
-        this.loadRoutes();
-        this.loadAffaires();
-        this.loadFournisseurs();
-        this.filterData();
-        this.fetchClients();
-        this.fetchLots();
+  ngOnInit(): void {
+    this.loadRoutes();
+    this.loadAffaires();
+    this.loadFournisseurs();
+    this.filterData();
+    this.fetchClients();
+    this.fetchLots();
+  }
 
-    }
+  filterData(filterType: string = ""): void {
+    // Update filterType before applying filters
+    this.filterType = filterType;
 
-    filterData(filterType: string = ""): void {
-        // Update filterType before applying filters
-        this.filterType = filterType;
+    this.filteredRoutes = this.vehiculeRoutes.filter((route) => {
+      const matchesDate = this.filterDate
+        ? new Date(route.date!).toISOString().split("T")[0] === this.filterDate
+        : true;
 
-        this.filteredRoutes = this.vehiculeRoutes.filter((route) => {
-            const matchesDate = this.filterDate
-                ? new Date(route.date!).toISOString().split("T")[0] === this.filterDate
-                : true;
+      const matchesVehiculeName = this.filterVehiculeName
+        ? route.vehiculeGpsLocation?.name
+            ?.toLowerCase()
+            .includes(this.filterVehiculeName.toLowerCase())
+        : true;
 
-            const matchesVehiculeName = this.filterVehiculeName
-                ? route.vehiculeGpsLocation?.name
-                    ?.toLowerCase()
-                    .includes(this.filterVehiculeName.toLowerCase())
-                : true;
+      // Apply filter based on type only if filterType is set
+      // const matchesType = this.filterType
+      //   ? route.vehiculeGpsLocation?.groupName === this.filterType
+      //   : true;
 
-            // Apply filter based on type only if filterType is set
-            // const matchesType = this.filterType
-            //   ? route.vehiculeGpsLocation?.groupName === this.filterType
-            //   : true;
+      return matchesDate && matchesVehiculeName;
+    });
+  }
 
-            return matchesDate && matchesVehiculeName;
-        });
-    }
+  fetchClients(): void {
+    this.vehiculeRouteService.getAllClients().then((data: Client[]) => {
+      this.clients = data;
+      console.log("Clients:", this.clients);
+    });
+  }
 
-    fetchClients(): void {
-        this.vehiculeRouteService.getAllClients().then((data: Client[]) => {
-            this.clients = data;
-            console.log("Clients:", this.clients);
-        });
-    }
+  fetchLots(): void {
+    this.vehiculeRouteService.getAllLots().then((data: Lot[]) => {
+      this.lots = data;
+      console.log("Lots:", this.lots);
+    });
+  }
 
-    fetchLots(): void {
-        this.vehiculeRouteService.getAllLots().then((data: Lot[]) => {
-            this.lots = data;
-            console.log("Lots:", this.lots);
-        });
-    }
+  loadRoutes(): void {
+    this.vehiculeRouteService.onMouvementsListChanged
+      .pipe(takeUntil(this._unsubscribeAll))
+      .subscribe(
+        (routes) => {
+          // Check if routes is an array and map it to include isEditing property
+          this.vehiculeRoutes = Array.isArray(routes)
+            ? routes.map((route) => ({
+                ...route,
+                isEditing: false, // Initialize editing state
+              }))
+            : [];
+          this.filteredRoutes = this.vehiculeRoutes;
+        },
+        (error) => {
+          console.error("Error loading routes:", error);
+        }
+      );
 
-    loadRoutes(): void {
-        this.vehiculeRouteService.onMouvementsListChanged
-            .pipe(takeUntil(this._unsubscribeAll))
-            .subscribe(
-                (routes) => {
-                    // Check if routes is an array and map it to include isEditing property
-                    this.vehiculeRoutes = Array.isArray(routes)
-                        ? routes.map((route) => ({
-                            ...route,
-                            isEditing: false, // Initialize editing state
-                        }))
-                        : [];
-                    this.filteredRoutes = this.vehiculeRoutes;
-                },
-                (error) => {
-                    console.error("Error loading routes:", error);
-                }
+    this.vehiculeRouteService.getAllVehiculeRoutes();
+  }
+
+  loadAffaires(): void {
+    this.affaireService.onAffairesListChanged
+      .pipe(takeUntil(this._unsubscribeAll))
+      .subscribe((data) => {
+        if (data) {
+          this.affaires = data;
+        }
+      });
+
+    this.affaireService.getAffaires();
+  }
+
+  loadFournisseurs(): void {
+    this.fournisseurService.getAllFournisseurs().then(
+      (fournisseurs) =>
+        (this.fournisseurs = Array.isArray(fournisseurs) ? fournisseurs : []),
+      (error) => {
+        console.error("Error loading fournisseurs:", error);
+      }
+    );
+  }
+
+  openModal(modal: TemplateRef<any>, route: VehiculeRoute): void {
+    this.selectedVehiculeRoute = route;
+
+    this.vehiculeRouteService
+      .getFromMouvementByVehiculeRouteId(this.selectedVehiculeRoute.id!)
+      .then((fromMouvements: FromMouvement[]) => {
+        if (fromMouvements && fromMouvements.length > 0) {
+          this.fromMouvements = fromMouvements.map((fromMouvement) => {
+            const correspondingAffaire = this.affaires.find(
+              (affaire) => affaire.id === fromMouvement.affaire?.id
             );
+            const correspondingFournisseur = this.fournisseurs.find(
+              (fournisseur) => fournisseur.id === fromMouvement.fournisseur?.id
+            );
+            const dateBl = fromMouvement.dateBl
+              ? new Date(fromMouvement.dateBl)
+              : null;
 
-        this.vehiculeRouteService.getAllVehiculeRoutes();
-    }
+            return {
+              ...fromMouvement,
+              affaire: correspondingAffaire,
+              fournisseur: correspondingFournisseur,
+              dateBl: dateBl,
+            };
+          });
+        }
 
-    loadAffaires(): void {
-        this.affaireService.onAffairesListChanged.pipe(takeUntil(this._unsubscribeAll)).subscribe((data) => {
-            if (data) {
-                this.affaires = data;
-            }
+        // Open modal to display the fromMouvements
+        this.modalService.open(modal, {
+          size: "xl",
+          centered: true,
         });
+      })
+      .catch((error) => {
+        console.error("Error fetching FromMouvement data:", error);
+      });
+  }
 
-        this.affaireService.getAffaires();
-    }
+  closeModal(): void {
+    this.modalService.dismissAll();
+  }
 
-    loadFournisseurs(): void {
-        this.fournisseurService.getAllFournisseurs().then(
-            (fournisseurs) =>
-                (this.fournisseurs = Array.isArray(fournisseurs) ? fournisseurs : []),
-            (error) => {
-                console.error("Error loading fournisseurs:", error);
-            }
-        );
-    }
+  addFromMouvement(): void {
+    const newMouvement: FromMouvement = {
+      affaire: null,
+      fournisseur: null,
+      bl: "",
+      blMontant: 0,
+      dateBl: new Date(),
+    };
+    this.fromMouvements.push(newMouvement);
+    // Initialize the mapping for the new mouvement
+  }
 
-    openModal(modal: TemplateRef<any>, route: VehiculeRoute): void {
-        this.selectedVehiculeRoute = route;
-
-        this.vehiculeRouteService
-            .getFromMouvementByVehiculeRouteId(this.selectedVehiculeRoute.id!)
-            .then((fromMouvements: FromMouvement[]) => {
-                if (fromMouvements && fromMouvements.length > 0) {
-                    this.fromMouvements = fromMouvements.map((fromMouvement) => {
-                        const correspondingAffaire = this.affaires.find(
-                            (affaire) => affaire.id === fromMouvement.affaire?.id
-                        );
-                        const correspondingFournisseur = this.fournisseurs.find(
-                            (fournisseur) =>
-                                fournisseur.id === fromMouvement.fournisseur?.id
-                        );
-                        const dateBl = fromMouvement.dateBl
-                            ? new Date(fromMouvement.dateBl)
-                            : null;
-
-                        return {
-                            ...fromMouvement,
-                            affaire: correspondingAffaire,
-                            fournisseur: correspondingFournisseur,
-                            dateBl: dateBl,
-                        };
-                    });
-                }
-
-                // Open modal to display the fromMouvements
-                this.modalService.open(modal, {
-                    size: 'xl',
-                    centered: true,
-                });
-            })
-            .catch((error) => {
-                console.error('Error fetching FromMouvement data:', error);
-            });
-    }
-
-    closeModal(): void {
-        this.modalService.dismissAll();
-    }
-
-    addFromMouvement(): void {
-        const newMouvement: FromMouvement = {
-            affaire: null,
-            fournisseur: null,
-            bl: "",
-            blMontant: 0,
-            dateBl: new Date(),
-        };
-        this.fromMouvements.push(newMouvement);
-        // Initialize the mapping for the new mouvement
-    }
-
-    /*  removeFromMouvement(fromMouvement: FromMouvement): void {
+  /*  removeFromMouvement(fromMouvement: FromMouvement): void {
        this.fromMouvements = this.fromMouvements.filter(
          (fm) => fm !== fromMouvement
        );
      } */
-    removeFromMouvement(fromMouvement: FromMouvement): void {
-        console.log("Remove button clicked for:", fromMouvement);
+  removeFromMouvement(fromMouvement: FromMouvement): void {
+    console.log("Remove button clicked for:", fromMouvement);
 
-        const isNew = !fromMouvement.id;
+    const isNew = !fromMouvement.id;
 
+    Swal.fire({
+      title: "Are you sure?",
+      text: isNew
+        ? "This entry will be removed without saving."
+        : "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        if (isNew) {
+          this.fromMouvements = this.fromMouvements.filter(
+            (fm) => fm !== fromMouvement
+          );
+          Swal.fire("Deleted!", "Your mouvement has been deleted.", "success");
+        } else {
+          this.vehiculeRouteService
+            .deleteFromMouvement(fromMouvement.id)
+            .subscribe({
+              next: () => {
+                this.fromMouvements = this.fromMouvements.filter(
+                  (fm) => fm !== fromMouvement
+                );
+                Swal.fire(
+                  "Deleted!",
+                  "Your mouvement has been deleted.",
+                  "success"
+                );
+              },
+              error: (error) => {
+                console.error("Error removing mouvement:", error);
+                Swal.fire(
+                  "Error!",
+                  "There was a problem deleting the mouvement.",
+                  "error"
+                );
+              },
+            });
+        }
+      }
+    });
+  }
+
+  onAffaireChange(index: number): void {
+    this.disabledStates[index] = {
+      disableFournisseur: true,
+      disableAffaire: false,
+    };
+  }
+
+  onFournisseurChange(index: number): void {
+    this.disabledStates[index] = {
+      disableFournisseur: false,
+      disableAffaire: true,
+    };
+  }
+
+  saveAssociation(): void {
+    const fromMouvements = this.fromMouvements.map((mouvement) => ({
+      affaire: mouvement.affaire ? { id: mouvement.affaire.id } : null,
+      fournisseur: mouvement.fournisseur
+        ? { id: mouvement.fournisseur.id }
+        : null,
+      bl: mouvement.bl,
+      blMontant: mouvement.blMontant,
+      dateBl: new Date(mouvement.dateBl),
+    }));
+
+    const request: AssociateFromToRequestDTO = {
+      vehiculeRouteId: this.selectedVehiculeRoute.id,
+      fromMouvements: fromMouvements,
+    };
+
+    this.vehiculeRouteService.associateFromTo(request).subscribe(
+      (response) => {
         Swal.fire({
-            title: 'Are you sure?',
-            text: isNew ? 'This entry will be removed without saving.' : 'You won\'t be able to revert this!',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                if (isNew) {
-                    this.fromMouvements = this.fromMouvements.filter(
-                        (fm) => fm !== fromMouvement
-                    );
-                    Swal.fire('Deleted!', 'Your mouvement has been deleted.', 'success');
-                } else {
-                    this.vehiculeRouteService.deleteFromMouvement(fromMouvement.id).subscribe({
-                        next: () => {
-                            this.fromMouvements = this.fromMouvements.filter(
-                                (fm) => fm !== fromMouvement
-                            );
-                            Swal.fire('Deleted!', 'Your mouvement has been deleted.', 'success');
-                        },
-                        error: (error) => {
-                            console.error("Error removing mouvement:", error);
-                            Swal.fire('Error!', 'There was a problem deleting the mouvement.', 'error');
-                        }
-                    });
-                }
-            }
+          title: "Success!",
+          text: "Association saved successfully.",
+          icon: "success",
+          confirmButtonText: "OK",
+        }).then(() => {
+          this.closeModal();
+          this.loadRoutes();
         });
-    }
+      },
+      (error) => {
+        console.error("Error saving association:", error);
+        Swal.fire({
+          title: "Error!",
+          text: "There was an error saving the association.",
+          icon: "error",
+          confirmButtonText: "OK",
+        });
+      }
+    );
+  }
 
+  //logic Model details
+  openDetailModal(modal: TemplateRef<any>, vehiculeRouteId: number) {
+    this.vehiculeRouteService.getVehiculeRouteById(vehiculeRouteId).subscribe(
+      (data: any[]) => {
+        this.fromMouvements = data;
+        //console.log('FromMouvements:', this.fromMouvements); // Log the data to verify
+        this.modalService.open(modal, { size: "xl", centered: true });
+      },
+      (error) => console.error("Error fetching fromMouvements", error)
+    );
+  }
 
-    onAffaireChange(index: number): void {
-        this.disabledStates[index] = {
-            disableFournisseur: true,
-            disableAffaire: false,
-        };
-    }
-
-    onFournisseurChange(index: number): void {
-        this.disabledStates[index] = {
-            disableFournisseur: false,
-            disableAffaire: true,
-        };
-    }
-
-    saveAssociation(): void {
-        const fromMouvements = this.fromMouvements.map((mouvement) => ({
-            affaire: mouvement.affaire ? {id: mouvement.affaire.id} : null,
-            fournisseur: mouvement.fournisseur
-                ? {id: mouvement.fournisseur.id}
-                : null,
-            bl: mouvement.bl,
-            blMontant: mouvement.blMontant,
-            dateBl: new Date(mouvement.dateBl),
-        }));
-
-        const request: AssociateFromToRequestDTO = {
-            vehiculeRouteId: this.selectedVehiculeRoute.id,
-            fromMouvements: fromMouvements,
-        };
-
-        this.vehiculeRouteService.associateFromTo(request).subscribe(
-            (response) => {
-                Swal.fire({
-                    title: "Success!",
-                    text: "Association saved successfully.",
-                    icon: "success",
-                    confirmButtonText: "OK",
-                }).then(() => {
-                    this.closeModal();
-                    this.loadRoutes();
-                });
-            },
-            (error) => {
-                console.error("Error saving association:", error);
-                Swal.fire({
-                    title: "Error!",
-                    text: "There was an error saving the association.",
-                    icon: "error",
-                    confirmButtonText: "OK",
-                });
-            }
-        );
-    }
-
-    //logic Model details
-    openDetailModal(modal: TemplateRef<any>, vehiculeRouteId: number) {
-        this.vehiculeRouteService.getVehiculeRouteById(vehiculeRouteId).subscribe(
-            (data: any[]) => {
-                this.fromMouvements = data;
-                //console.log('FromMouvements:', this.fromMouvements); // Log the data to verify
-                this.modalService.open(modal, {size: "xl", centered: true});
-            },
-            (error) => console.error("Error fetching fromMouvements", error)
-        );
-    }
-
-    //------------------------------------------------------------------imputation
-    isInputsDisabled = false;
+  //------------------------------------------------------------------imputation Worked
+  /*    isInputsDisabled = false;
     currentImputation: TripImputationDTO | null = null;
-    
-    async getImputations(vehiculeRouteId: number, content: any) {
+     */
+  /*  async getImputations(vehiculeRouteId: number, content: any) {
         try {
             const data = await this.vehiculeRouteService.getImputationByVehiculeRouteId(vehiculeRouteId);
             this.imputations = data as TripImputationDTO[];
@@ -557,99 +569,441 @@ export class VehiculeMouvementListComponent implements OnInit {
     enableEdit(imputation: TripImputationDTO) {
         this.isInputsDisabled = false;
         this.currentImputation = imputation;
+    } */
+
+
+
+
+  //new Structure Imputation ----02/11/2024-----------------------------------------------------------------------------------
+  newImputation: any = {}; // Object to hold new imputation details
+  @ViewChild("addImputationModal") addImputationModal: TemplateRef<any>;
+  @ViewChild("editeImputationModal") editeImputationModal: TemplateRef<any>;
+  async getImputations(vehiculeRouteId: number, content: any) {
+    try {
+      const data =
+        await this.vehiculeRouteService.getImputationByVehiculeRouteId(
+          vehiculeRouteId
+        );
+      this.imputations = data as TripImputationDTO[];
+      this.modalService.open(content, { size: "xl", centered: true });
+    } catch (error) {
+      console.error("Error fetching imputations:", error);
+    }
+  }
+
+  openModals(content: any, route: VehiculeRoute) {
+    this.selectedVehiculeRoute = route;
+    this.vehiculeRouteId = route?.id;
+
+    if (!this.vehiculeRouteId) {
+      console.error("Vehicule Route ID is missing, cannot open modal.");
+      return;
     }
 
-
-    //--------------------------costfillilng
-    confirmFillingPercentage(vehiculeRoute: VehiculeRoute): void {
-        if (
-            vehiculeRoute.fillingPercentage !== undefined &&
-            vehiculeRoute.fillingPercentage >= 0 &&
-            vehiculeRoute.fillingPercentage <= 100
-        ) {
-            let dto: UpdateFillingPercentageDTO = new UpdateFillingPercentageDTO(
-                vehiculeRoute.id,
-                vehiculeRoute.fillingPercentage
+    this.vehiculeRouteService
+      .imputationByVehiculeRoute(this.vehiculeRouteId)
+      .subscribe({
+        next: (imputations) => {
+          if (Array.isArray(imputations)) {
+            this.imputations = imputations.map(
+              (imputation) =>
+                new TripImputationDTO(
+                  imputation.id || null,
+                  imputation.affaireId,
+                  imputation.affaireCode,
+                  imputation.fillingPercentage || 0,
+                  imputation.observation || "",
+                  imputation.client ? imputation.client.id : null, // Ensure client mapping
+                  imputation.lot ? imputation.lot.id : null, // Ensure lot mapping
+                  imputation.subContractorId,
+                  imputation.subContractorFullName,
+                  imputation.costImputation || 0
+                )
             );
+            this.modalService.open(content, { size: "xl", centered: true });
+          } else {
+            console.warn("Imputations data is not an array:", imputations);
+            this.imputations = [];
+          }
+        },
+        error: (error) => {
+          console.error("Error fetching imputations:", error);
+          Swal.fire({
+            icon: "error",
+            title: "Error Fetching Imputations",
+            text: "Could not retrieve imputations for the selected route.",
+          });
+        },
+      });
+  }
 
-            this.vehiculeRouteService.updateFillingPercentage(dto).then(
-                (updatedRoute) => {
-                    this.toastr.success("Filling percentage updated successfully!");
-                },
-                (error) => {
-                    console.error("Error updating filling percentage", error);
-                    this.toastr.error("Failed to update filling percentage.");
-                }
-            );
+  removeImputation(imputation: TripImputationDTO): void {
+    const isNew = !imputation.id;
+    Swal.fire({
+      title: "Êtes-vous sûr ?",
+      text: isNew
+        ? "Cette imputation sera supprimée sans être enregistrée."
+        : "Cette imputation sera définitivement supprimée !",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Oui, supprimez-la !",
+      cancelButtonText: "Annuler",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        if (isNew) {
+          this.imputations = this.imputations.filter((i) => i !== imputation);
+          Swal.fire("Supprimé !", "L'imputation a été supprimée.", "success");
         } else {
-            this.toastr.warning(
-                "Please enter a valid filling percentage between 0 and 100."
-            );
+          this.vehiculeRouteService.deleteImputation(imputation.id).subscribe({
+            next: () => {
+              this.imputations = this.imputations.filter(
+                (i) => i !== imputation
+              );
+              Swal.fire(
+                "Supprimé !",
+                "L'imputation a été supprimée.",
+                "success"
+              );
+            },
+            error: (error) => {
+              console.error(
+                "Erreur lors de la suppression de l'imputation :",
+                error
+              );
+              Swal.fire(
+                "Erreur !",
+                "Il y a eu un problème lors de la suppression de l'imputation.",
+                "error"
+              );
+            },
+          });
         }
+      }
+    });
+  }
+
+  addImputation() {
+    const newImputation = new TripImputationDTO(
+      null,
+      null,
+      "",
+      0,
+      "",
+      null,
+      null,
+      null,
+      "",
+      0,
+      null,
+      null
+    );
+    this.imputations.push(newImputation);
+  }
+  //reset data and initializ imputation
+  resetImputationData() {
+    this.vehiculeRouteId = null;
+    this.newImputation = {
+      id: null,
+      affaireId: null,
+      fillingPercentage: 0,
+      observation: '',
+      clientId: null,
+      lotId: null,
+      subContractorId: null,
+      costImputation: null,
+      affaireCode: '',
+      subContractorFullName: '',
+    };
+  }
+  //save Imputation Modal
+  async saveImputation(modal: any) {
+    // Check if the vehiculeRouteId is present
+    if (!this.vehiculeRouteId) {
+      Swal.fire({
+        icon: "error",
+        title: "Vehicule Route ID Missing",
+        text: "Please select a Vehicule Route before saving.",
+      });
+      return;
     }
 
-    //---------------------------------------------------
-    editRow(row: any): void {
-        this.selectedRow = {...row};
+    // Check if the imputation is present
+    if (!this.newImputation) {
+      Swal.fire({
+        icon: "error",
+        title: "Imputation Missing",
+        text: "Please add an imputation before saving.",
+      });
+      return;
     }
 
-    updateRouteLength(row: any): void {
+    // Check if fillingPercentage is valid
+    if (this.newImputation.fillingPercentage > 100) {
+      Swal.fire({
+        icon: "error",
+        title: "Filling Percentage Exceeded",
+        text: "Filling percentage cannot exceed 100%.",
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You are about to save the imputation.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, save it!",
+      cancelButtonText: "No, cancel!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const imputationRequest: ImputationRequestDTO = {
+            vehiculeRouteId: this.vehiculeRouteId,
+            imputations: [
+              {
+                id: this.newImputation.id,
+                affaireId: this.newImputation.affaireId,
+                fillingPercentage: this.newImputation.fillingPercentage,
+                observation: this.newImputation.observation,
+                clientId: this.newImputation.clientId,
+                lotId: this.newImputation.lotId,
+                subContractorId: this.newImputation.subContractorId,
+                costImputation: this.newImputation.costImputation,
+                affaireCode: this.newImputation.affaireCode || "",
+                subContractorFullName:
+                  this.newImputation.subContractorFullName || "",
+              },
+            ],
+          };
+
+          // Call the service to save the imputation
+          await this.vehiculeRouteService
+            .associateImputation(imputationRequest)
+            .toPromise();
+
+          // Show success message
+          Swal.fire(
+            "Success!",
+            "Imputation saved successfully.",
+            "success"
+          ).then(async () => {
+            // Close the modal
+            modal.dismiss();
+          });
+        } catch (error) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "There was an error saving the imputation.",
+          });
+          console.error("Error saving the imputation:", error);
+        }
+      }
+    });
+  }
+  openAddImputationModal() {
+    this.resetImputationData();
+    const modalRef = this.modalService.open(this.addImputationModal, {
+      size: "xl",
+      centered: true,
+    });
+  }
+  //update Imputation modal
+  async updateImputation(modal: any) {
+    if (!this.vehiculeRouteId) {
+      Swal.fire(
+        "Error",
+        "Please select a Vehicule Route before saving.",
+        "error"
+      );
+      return;
+    }
+
+    const imputationRequest: ImputationRequestDTO = {
+      vehiculeRouteId: this.vehiculeRouteId,
+      imputations: [
+        {
+          id: this.newImputation.id,
+          affaireId: this.newImputation.affaireId,
+          fillingPercentage: this.newImputation.fillingPercentage,
+          observation: this.newImputation.observation,
+          clientId: this.newImputation.clientId,
+          lotId: this.newImputation.lotId,
+          subContractorId: this.newImputation.subContractorId,
+          costImputation: this.newImputation.costImputation,
+          affaireCode: this.newImputation.affaireCode || "",
+          subContractorFullName: this.newImputation.subContractorFullName || "",
+        },
+      ],
+    };
+
+    try {
+      if (this.newImputation.id) {
+        // Update existing imputation
+        await this.vehiculeRouteService
+          .updateImputation(this.newImputation)
+          .pipe(take(1))
+          .toPromise();
+        Swal.fire("Success", "Imputation updated successfully.", "success");
+      }
+      // Refresh the imputations list and close the modal
+      modal.dismiss();
+    } catch (error) {
+      Swal.fire("Error", "There was an error saving the imputation.", "error");
+      console.error("Error saving the imputation:", error);
+    }
+  }
+ 
+  openEditImputationModal(imputation: TripImputationDTO) {
+    this.newImputation = { ...imputation };
+    this.modalService.open(this.editeImputationModal, {
+      size: "xl",
+      centered: true,
+    });
+  }
+
+  isFormValid(): boolean {
+    return (
+      this.newImputation.affaireId > 0 &&
+      this.newImputation.fillingPercentage >= 0 &&
+      this.newImputation.fillingPercentage <= 100 &&
+      this.newImputation.clientId > 0
+    );
+  }
+
+  getTotalCostImputation(): number {
+    return this.imputations.reduce(
+      (total, imputation) => total + (imputation.costImputation || 0),
+      0
+    );
+  }
+
+  /* enableEdit(imputation: TripImputationDTO) {
+    this.isInputsDisabled = false;
+    this.currentImputation = imputation;
+} */
+  getAffaireCode(affaireId: number): string {
+    const affaire = this.affaires.find((a) => a.id === affaireId);
+    return affaire ? affaire.code : "Unknown";
+  }
+
+  getClientName(clientId: number): string {
+    const client = this.clients.find((c) => c.id === clientId);
+    return client ? client.name : "Unknown";
+  }
+
+  getLotName(lotId: number): string {
+    const lot = this.lots.find((l) => l.id === lotId);
+    return lot ? lot.name : "Unknown";
+  }
+
+  getSubContractorName(subContractorId: number): string {
+    const soustraitant = this.soustraitants.find(
+      (s) => s.id === subContractorId
+    );
+    return soustraitant ? soustraitant.fullName : "Unknown";
+  }
+
+  //----------------------------------------------------------------------------------------------------------------
+
+  //--------------------------costfillilng
+  confirmFillingPercentage(vehiculeRoute: VehiculeRoute): void {
+    if (
+      vehiculeRoute.fillingPercentage !== undefined &&
+      vehiculeRoute.fillingPercentage >= 0 &&
+      vehiculeRoute.fillingPercentage <= 100
+    ) {
+      let dto: UpdateFillingPercentageDTO = new UpdateFillingPercentageDTO(
+        vehiculeRoute.id,
+        vehiculeRoute.fillingPercentage
+      );
+
+      this.vehiculeRouteService.updateFillingPercentage(dto).then(
+        (updatedRoute) => {
+          this.toastr.success("Filling percentage updated successfully!");
+        },
+        (error) => {
+          console.error("Error updating filling percentage", error);
+          this.toastr.error("Failed to update filling percentage.");
+        }
+      );
+    } else {
+      this.toastr.warning(
+        "Please enter a valid filling percentage between 0 and 100."
+      );
+    }
+  }
+
+  //---------------------------------------------------
+  editRow(row: any): void {
+    this.selectedRow = { ...row };
+  }
+
+  updateRouteLength(row: any): void {
+    Swal.fire({
+      title: "Êtes-vous sûr?",
+      text: "Voulez-vous vraiment mettre à jour la longueur de l'itinéraire?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Oui, mettre à jour",
+      cancelButtonText: "Non, annuler",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const updateDto: UpdateMouvementDTO = {
+          id: row.id,
+          routeLength: row.route_length,
+        };
+
+        this.vehiculeRouteService
+          .updateMouvement(updateDto)
+          .then((response) => {
+            console.log("Mise à jour réussie", response);
+            this.toastr.success(
+              "La longueur de l'itinéraire a été mise à jour avec succès!",
+              "Succès"
+            );
+
+            this.loadRoutes();
+            this.selectedRow.route_length = updateDto.routeLength;
+            this.selectedRow = null;
+
+            Swal.fire({
+              title: "Succès!",
+              text: "La longueur de l'itinéraire a été mise à jour avec succès!",
+              icon: "success",
+              confirmButtonText: "OK",
+            });
+          })
+          .catch((error) => {
+            console.error("Échec de la mise à jour", error);
+            this.toastr.error(
+              "Échec de la mise à jour de la longueur de l'itinéraire",
+              "Erreur"
+            );
+
+            Swal.fire({
+              title: "Erreur!",
+              text: "Échec de la mise à jour de la longueur de l'itinéraire.",
+              icon: "error",
+              confirmButtonText: "OK",
+            });
+          });
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
         Swal.fire({
-            title: 'Êtes-vous sûr?',
-            text: "Voulez-vous vraiment mettre à jour la longueur de l'itinéraire?",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Oui, mettre à jour',
-            cancelButtonText: 'Non, annuler',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const updateDto: UpdateMouvementDTO = {
-                    id: row.id,
-                    routeLength: row.route_length,
-                };
-
-                this.vehiculeRouteService
-                    .updateMouvement(updateDto)
-                    .then((response) => {
-                        console.log("Mise à jour réussie", response);
-                        this.toastr.success("La longueur de l'itinéraire a été mise à jour avec succès!", "Succès");
-
-                        this.loadRoutes();
-                        this.selectedRow.route_length = updateDto.routeLength;
-                        this.selectedRow = null;
-
-                        Swal.fire({
-                            title: 'Succès!',
-                            text: "La longueur de l'itinéraire a été mise à jour avec succès!",
-                            icon: 'success',
-                            confirmButtonText: 'OK'
-                        });
-                    })
-                    .catch((error) => {
-                        console.error("Échec de la mise à jour", error);
-                        this.toastr.error("Échec de la mise à jour de la longueur de l'itinéraire", "Erreur");
-
-                        Swal.fire({
-                            title: 'Erreur!',
-                            text: "Échec de la mise à jour de la longueur de l'itinéraire.",
-                            icon: 'error',
-                            confirmButtonText: 'OK'
-                        });
-                    });
-            } else if (result.dismiss === Swal.DismissReason.cancel) {
-                Swal.fire({
-                    title: 'Annulé',
-                    text: "La mise à jour de la longueur de l'itinéraire a été annulée.",
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-            }
+          title: "Annulé",
+          text: "La mise à jour de la longueur de l'itinéraire a été annulée.",
+          icon: "error",
+          confirmButtonText: "OK",
         });
-    }
+      }
+    });
+  }
 
-    //------------------------------------------------
+  //------------------------------------------------
 
-    /*refreshData(): void {
+  /*refreshData(): void {
       // Method to refresh or reload the data
       this.vehiculeRouteService.getAllVehiculeRoutes().then(
         routes => {
@@ -661,26 +1015,25 @@ export class VehiculeMouvementListComponent implements OnInit {
         }
       );
     }*/
-    affaireSelected: Affaire;
-    subContractorSelected: Soustraitant;
-    mode: string='display';
+  affaireSelected: Affaire;
+  subContractorSelected: Soustraitant;
+  mode: string = "display";
 
-    onAffaireChanged(affaireId: number) {
-        console.log("onAffaireChanged")
-        console.log(affaireId)
-        this.soustraitants = [];
+  onAffaireChanged(affaireId: number) {
+    console.log("onAffaireChanged");
+    console.log(affaireId);
+    this.soustraitants = [];
 
+    this.vehiculeRouteService
+      .getSoustraitants(affaireId)
+      .then((data: Soustraitant[]) => {
+        this.soustraitants = data;
+        console.log("Soustraitants:", this.soustraitants);
+      });
+  }
 
-        this.vehiculeRouteService.getSoustraitants(affaireId).then(
-            (data: Soustraitant[]) => {
-                this.soustraitants = data;
-                console.log("Soustraitants:", this.soustraitants);
-            });
-    }
-
-    onSubcontractorChanged(subContractorId: number) {
-        console.log("onSubcontractorChanged")
-        console.log(subContractorId)
-
-    }
+  onSubcontractorChanged(subContractorId: number) {
+    console.log("onSubcontractorChanged");
+    console.log(subContractorId);
+  }
 }

@@ -216,9 +216,9 @@
             <div class="modal-header">
                 <h5 class="modal-title">Details From </h5>
                 <button type="button" class="btn btn-close btn-lg" aria-label="Close" (click)="modal.dismiss()">
-                    <span aria-hidden="true" style="font-size: 1.5rem;">&times;</span> 
+                    <span aria-hidden="true" style="font-size: 1.5rem;">&times;</span>
                 </button>
-            </div>      
+            </div>
 
             <!-- Modal Body -->
             <div class="modal-body">
@@ -273,7 +273,7 @@
                                             required />
                                     </td>
 
-                                   <!--  <td>
+                                    <!--  <td>
                                         <button type="button" class="btn btn-danger btn-sm"
                                             (click)="removeFromMouvement(fromMouvement)">
                                             Supprimer
@@ -281,12 +281,12 @@
                                     </td> -->
                                     <td>
                                         <div ngbDropdown class="dropdown">
-                                            <button ngbDropdownToggle class="btn btn-light" type="button" >
-                                                &#x22EE; 
+                                            <button ngbDropdownToggle class="btn btn-light" type="button">
+                                                &#x22EE;
                                             </button>
                                             <div ngbDropdownMenu>
-                                                <a class="dropdown-item text-danger"  (click)="removeFromMouvement(fromMouvement)" 
-                                                   > 
+                                                <a class="dropdown-item text-danger"
+                                                    (click)="removeFromMouvement(fromMouvement)">
                                                     Supprimer
                                                 </a>
                                             </div>
@@ -312,8 +312,8 @@
     </div>
 </ng-template>
 
-<!-- Modal for Imputation -->
-<ng-template #imputationModal let-modal>
+<!-- Modal for Imputation Worked-->
+<!--  <ng-template #imputationModal let-modal>
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
@@ -357,7 +357,7 @@
                                     <td>
                                         <input type="number" class="form-control form-control-lg custom-input"
                                                [(ngModel)]="imputation.fillingPercentage"
-                                               (ngModelChange)="updateImputation(imputation)"
+                                               (keyup)="onchangeFillinge(imputation)"
                                                name="fillingPercentage_{{i}}"
                                                required min="0" max="100" step="0.01"
                                                aria-label="Filling Percentage" 
@@ -431,13 +431,313 @@
                                 </tr>
                             </tbody>
                             
-                            <!-- Add Imputation Button -->
                             <button type="button" class="btn btn-success" (click)="addImputation()">+</button>
                         </table>
                     </div>
 
-                    <!-- Save Imputation Button -->
                     <button type="submit" class="btn btn-primary">Sauvegarder Imputation</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</ng-template>   -->
+
+
+<!-- Existing Modal for Imputation Details -->
+<ng-template #imputationModal let-modal>
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Details Imputation</h5>
+                <button type="button" class="btn btn-close btn-lg" aria-label="Close" (click)="modal.dismiss()">
+                    <span aria-hidden="true" style="font-size: 1.5rem;">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Affaire</th>
+                                <th>% Imputation</th>
+                                <th>Observation</th>
+                                <th>Client</th>
+                                <th>Lot</th>
+                                <th>Soustraitant</th>
+                                <th>Cost</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let imputation of imputations">
+                                <td>{{ getAffaireCode(imputation.affaireId) }}</td>
+                                <td>{{ imputation.fillingPercentage | number:'1.2-2' }}%</td>
+                                <td>{{ imputation.observation }}</td>
+                                <td>{{ getClientName(imputation.clientId) }}</td>
+                                <td>{{ getLotName(imputation.lotId) }}</td>
+                                <td>{{ imputation.subContractorFullName }}</td>
+                                <td>{{ imputation.costImputation | number:'1.2-2' }} MAD</td>
+                                <td>
+                                    <div ngbDropdown class="dropdown">
+                                        <button ngbDropdownToggle class="btn btn-light" type="button">&#x22EE;</button>
+                                        <div ngbDropdownMenu>
+                                            <a class="dropdown-item" (click)="openEditImputationModal(imputation)">Edit</a>
+                                            <a class="dropdown-item text-danger" (click)="removeImputation(imputation)">Delete</a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6; padding: 1rem;">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <button type="button" class="btn btn-success" (click)="openAddImputationModal()">
+                        + Add Imputation
+                    </button>
+                    <div class="total-cost" style="background-color: #e2f0d9; border-radius: 5px; padding: 10px; font-weight: bold;">
+                        <span style="color: #28a745;">Total Cost:</span> 
+                        <span style="color: #333;">{{ getTotalCostImputation() | number:'1.2-2' }} MAD</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</ng-template>
+
+
+<!-- add-imputation-modal -->
+<ng-template #addImputationModal let-modal>
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Imputation</h5>
+                <button type="button" class="btn btn-close" aria-label="Close" (click)="modal.dismiss()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <form #form="ngForm" (ngSubmit)="saveImputation(modal)">
+                    <div class="row">
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label for="affaireId">Affaire</label>
+                                <select id="affaireId" class="form-control"
+                                        [(ngModel)]="newImputation.affaireId"
+                                        name="affaireId"
+                                        required
+                                        (change)="onAffaireChanged(newImputation.affaireId)">
+                                    <option *ngFor="let affaire of affaires" [ngValue]="affaire.id">
+                                        {{ affaire.code }}
+                                    </option>
+                                </select>
+                                <div *ngIf="form.controls['affaireId']?.invalid && form.controls['affaireId']?.touched" class="text-danger">
+                                    Affaire is required.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label for="fillingPercentage">Filling Percentage</label>
+                                <input type="number" id="fillingPercentage" class="form-control"
+                                       [(ngModel)]="newImputation.fillingPercentage"
+                                       name="fillingPercentage"
+                                       required min="0" max="100" step="0.01" />
+                                <div *ngIf="form.controls['fillingPercentage']?.invalid && form.controls['fillingPercentage']?.touched" class="text-danger">
+                                    Filling Percentage is required and must be between 0 and 100.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label for="observation">Observation</label>
+                                <input type="text" id="observation" class="form-control"
+                                       [(ngModel)]="newImputation.observation"
+                                       name="observation" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label for="clientId">Client</label>
+                                <select id="clientId" class="form-control"
+                                        [(ngModel)]="newImputation.clientId"
+                                        name="clientId"
+                                        required>
+                                    <option *ngFor="let client of clients" [ngValue]="client.id">
+                                        {{ client.name }}
+                                    </option>
+                                </select>
+                                <div *ngIf="form.controls['clientId']?.invalid && form.controls['clientId']?.touched" class="text-danger">
+                                    Client is required.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label for="lotId">Lot</label>
+                                <select id="lotId" class="form-control"
+                                        [(ngModel)]="newImputation.lotId"
+                                        name="lotId">
+                                    <option *ngFor="let lot of lots" [ngValue]="lot.id">
+                                        {{ lot.name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label for="subContractorId">Sous-traitant</label>
+                                <select id="subContractorId" class="form-control"
+                                        (change)="onSubcontractorChanged(newImputation.subContractorId)"
+                                        [(ngModel)]="newImputation.subContractorId"
+                                        name="subContractorId">
+                                    <option *ngFor="let soustraitant of soustraitants" [ngValue]="soustraitant.id">
+                                        {{ soustraitant?.fullName }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label>Cost</label>
+                                <div class="form-control-plaintext">
+                                    {{ newImputation.costImputation | number:'1.2-2' }} MAD
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary mr-1" >Save Imputation</button>
+                            <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">Cancel</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</ng-template>
+<!-- edite-imputation-modal -->
+<ng-template #editeImputationModal let-modal>
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modifier Imputation</h5>
+                <button type="button" class="btn btn-close" aria-label="Close" (click)="modal.dismiss()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <form #form="ngForm" (ngSubmit)="updateImputation(modal)">
+                    <div class="row">
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label for="affaireId">Affaire</label>
+                                <select id="affaireId" class="form-control"
+                                        [(ngModel)]="newImputation.affaireId"
+                                        name="affaireId"
+                                        required
+                                        (change)="onAffaireChanged(newImputation.affaireId)">
+                                    <option *ngFor="let affaire of affaires" [ngValue]="affaire.id">
+                                        {{ affaire.code }}
+                                    </option>
+                                </select>
+                                <div *ngIf="form.controls['affaireId']?.invalid && form.controls['affaireId']?.touched" class="text-danger">
+                                    Affaire is required.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label for="fillingPercentage">Pourcentage de Remplessage </label>
+                                <input type="number" id="fillingPercentage" class="form-control"
+                                       [(ngModel)]="newImputation.fillingPercentage"
+                                       name="fillingPercentage"
+                                       required min="0" max="100" step="0.01" />
+                                <div *ngIf="form.controls['fillingPercentage']?.invalid && form.controls['fillingPercentage']?.touched" class="text-danger">
+                                    Filling Percentage is required and must be between 0 and 100.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label for="observation">Observation</label>
+                                <input type="text" id="observation" class="form-control"
+                                       [(ngModel)]="newImputation.observation"
+                                       name="observation" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label for="clientId">Client</label>
+                                <select id="clientId" class="form-control"
+                                        [(ngModel)]="newImputation.clientId"
+                                        name="clientId"
+                                        required>
+                                    <option *ngFor="let client of clients" [ngValue]="client.id">
+                                        {{ client.name }}
+                                    </option>
+                                </select>
+                                <div *ngIf="form.controls['clientId']?.invalid && form.controls['clientId']?.touched" class="text-danger">
+                                    Client is required.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label for="lotId">Lot</label>
+                                <select id="lotId" class="form-control"
+                                        [(ngModel)]="newImputation.lotId"
+                                        name="lotId">
+                                    <option *ngFor="let lot of lots" [ngValue]="lot.id">
+                                        {{ lot.name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label for="subContractorId">Sous-traitant</label>
+                                <select id="subContractorId" class="form-control"
+                                        (change)="onSubcontractorChanged(newImputation.subContractorId)"
+                                        [(ngModel)]="newImputation.subContractorId"
+                                        name="subContractorId">
+                                    <option *ngFor="let soustraitant of soustraitants" [ngValue]="soustraitant.id">
+                                        {{ soustraitant?.fullName }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="form-group">
+                                <label>Cost</label>
+                                <div class="form-control-plaintext">
+                                    {{ newImputation.costImputation | number:'1.2-2' }} MAD
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary mr-1" >Modifier Imputation</button>
+                            <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">Annuler</button>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
@@ -447,6 +747,9 @@
 
 
 
+  
+  
+  
 
 
 <!-- Detail Modal -->
