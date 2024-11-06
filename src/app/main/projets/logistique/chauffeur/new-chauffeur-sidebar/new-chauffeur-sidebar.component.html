@@ -16,33 +16,33 @@
                     <div class="modal-body flex-grow-1">
                         <div class="form-group">
                             <label class="form-label" for="chauffeur-name">Nom Complet</label>
-                            <input type="text" class="form-control" id="chauffeur-name" placeholder="John Doe"
+                            <input type="text" class="form-control" id="chauffeur-name"
                                 name="chauffeur-name" [(ngModel)]="newChauffeur.name" required />
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="chauffeur-idn">Code Chauffeur </label>
-                            <input type="text" class="form-control" id="chauffeur-idn" placeholder="ID Number"
+                            <input type="text" class="form-control" id="chauffeur-idn"
                                 name="chauffeur-idn" [(ngModel)]="newChauffeur.idn" required />
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="chauffeur-address">Role</label>
-                            <input type="text" class="form-control" id="chauffeur-address" placeholder="Role"
+                            <input type="text" class="form-control" id="chauffeur-address"
                                 name="chauffeur-address" [(ngModel)]="newChauffeur.address" required />
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="chauffeur-phone">Téléphone</label>
-                            <input type="text" class="form-control" id="chauffeur-phone" placeholder="Phone Number"
+                            <input type="text" class="form-control" id="chauffeur-phone"
                                 name="chauffeur-phone" [(ngModel)]="newChauffeur.phone" required />
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="chauffeur-email">Email</label>
                             <input type="email" class="form-control" id="chauffeur-email"
-                                placeholder="john.doe@example.com" name="chauffeur-email"
+                                 name="chauffeur-email"
                                 [(ngModel)]="newChauffeur.email" required />
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="chauffeur-imgPath">Image</label>
-                            <input type="file" class="form-control" id="chauffeur-imgPath" placeholder="Image URL"
+                            <input type="file" class="form-control" id="chauffeur-imgPath"
                                 name="chauffeur-imgPath" (change)="onFileSelected($event)" />
                         </div>
                         <button type="submit" class="btn btn-outline-success mr-1">Ajouter</button>

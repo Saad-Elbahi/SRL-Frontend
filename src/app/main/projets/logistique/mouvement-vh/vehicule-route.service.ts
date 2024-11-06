@@ -6,22 +6,27 @@ import { VehiculeRoute } from "../models/vehicule-route";
 import { BehaviorSubject, Observable, throwError } from "rxjs";
 import { catchError, map } from "rxjs/operators";
 import { AssociateFromToRequestDTO } from "../models/DTO/AssociateFromToRequestDTO";
-import { ImputationRequestDTO } from "../models/DTO/ImputationRequestDTO";
 import { UpdateFillingPercentageDTO } from "../models/DTO/UpdateFillingPercentageDTO";
 import { PerformanceOverTimeRequestDTO } from "../models/DTO/PerformanceOverTimeRequestDTO";
 import { UpdateMouvementDTO } from "../models/DTO/UpdateMouvementDTO";
-import { FromMouvementDTO } from "../models/DTO/FromMouvementDTO";
-import { TripImputationDTO } from "../models/DTO/TripImputationDTO";
+import { TripImputationRequestDTO } from "../models/DTO/TripImputationRequestDTO";
+import { FromMouvementRequestDTO } from "../models/DTO/FromMouvementRequestDTO";
 
 @Injectable({
   providedIn: "root",
 })
 export class VehiculeRouteService {
   onMouvementsListChanged: BehaviorSubject<any[]>;
+  onImputationsChanged: BehaviorSubject<any[]>;
+  onFromMouvementChanged: BehaviorSubject<any[]>;
 
   constructor(private srManagerService: SrManagerService) {
     // @ts-ignore
     this.onMouvementsListChanged = new BehaviorSubject<any[]>();
+    // @ts-ignore
+    this.onImputationsChanged = new BehaviorSubject<any[]>();
+    // @ts-ignore
+    this.onFromMouvementChanged = new BehaviorSubject<any[]>();
   }
 
   getAllVehiculeRoutes(): Promise<any[]> {
@@ -122,9 +127,7 @@ export class VehiculeRouteService {
     return this.srManagerService.postRessource(url, request);
   } */
 
-  associateFromTo(
-    request: AssociateFromToRequestDTO
-  ): Observable<VehiculeRoute> {
+  associateFromTo(request: FromMouvementRequestDTO): Observable<VehiculeRoute> {
     const url = `${environment.vhrouteapi}/associateFromTo`;
     /*const params = new HttpParams().set(
           "vehiculeRouteId",
@@ -141,20 +144,23 @@ export class VehiculeRouteService {
   }
 
   //A Refaire
-  associateImputation(imputationRequest: ImputationRequestDTO): Observable<VehiculeRoute> {
-    const url = `${environment.vhrouteapi}/associateImputation`;
-    console.log("Sending request to:", url);
-    console.log("Request payload:", imputationRequest);
-  
-    return this.srManagerService.postRessource(url, imputationRequest);
-  }
-  
 
-  imputationByVehiculeRoute(vehiculeRouteId: number): Observable<any[]> {
+  /*imputationByVehiculeRoute(vehiculeRouteId: number): Observable<any[]> {
     // @ts-ignore
     return this.srManagerService.getResources(
       `${environment.tripimpapi}/imputationByVehiculeRoute/${vehiculeRouteId}`
     );
+  }*/
+
+  imputationByVehiculeRoute(vehiculeRouteId: number): Promise<any[]> {
+    let url = `${environment.tripimpapi}/imputationByVehiculeRoute/${vehiculeRouteId}`;
+
+    return new Promise((resolve, reject) => {
+      this.srManagerService.getResources(url).subscribe((response: any) => {
+        this.onImputationsChanged.next(response);
+        resolve(response);
+      }, reject);
+    });
   }
 
   /*updateFillingPercentage(dto: UpdateFillingPercentageDTO): Promise<any> {
@@ -239,22 +245,19 @@ export class VehiculeRouteService {
   }
 
   getSoustraitants(projectId: number) {
-    console.log('Subcontractors byProject==>' + projectId);
+    console.log("Subcontractors byProject==>" + projectId);
     return new Promise((resolve, reject) => {
-        const url = `${environment.soustraitantapi}/soustraitants/` + projectId;
-        this.srManagerService.getResource(url).subscribe(
-            (response) => {
-                resolve(response);
-            },
-            (error) => {
-                reject(error);
-            }
-        );
+      const url = `${environment.soustraitantapi}/soustraitants/` + projectId;
+      this.srManagerService.getResource(url).subscribe(
+        (response) => {
+          resolve(response);
+        },
+        (error) => {
+          reject(error);
+        }
+      );
     });
-}
-
-   
-
+  }
 
   getImputationByVehiculeRouteId(vehiculeRouteId: number) {
     return new Promise((resolve, reject) => {
@@ -286,9 +289,7 @@ export class VehiculeRouteService {
   deleteFromMouvement(id: number): Observable<void> {
     // @ts-ignore
     return this.srManagerService
-      .deleteRessource(
-        `${environment.frommvtapi}/${id}`
-      )
+      .deleteRessource(`${environment.frommvtapi}/${id}`)
       .pipe(
         catchError((error: HttpErrorResponse) => {
           console.error("Error occurred:", error);
@@ -299,9 +300,7 @@ export class VehiculeRouteService {
   deleteImputation(id: number): Observable<void> {
     // @ts-ignore
     return this.srManagerService
-      .deleteRessource(
-        `${environment.tripimpapi}/deleteImputation/${id}`
-      )
+      .deleteRessource(`${environment.tripimpapi}/deleteImputation/${id}`)
       .pipe(
         catchError((error: HttpErrorResponse) => {
           console.error("Error occurred:", error);
@@ -309,7 +308,7 @@ export class VehiculeRouteService {
         })
       );
   }
-/*   updateImputation(dto: TripImputationDTO): Promise<any> {
+  /*   updateImputation(dto: TripImputationDTO): Promise<any> {
     const url = `${environment.tripimpapi}/updateImputation/${dto.id}`; 
 
     return new Promise((resolve, reject) => {
@@ -325,8 +324,63 @@ export class VehiculeRouteService {
     });
 }
  */
-updateImputation(dto: TripImputationDTO): Observable<any> {
-  const url = `${environment.tripimpapi}/updateImputation/${dto.id}`;
-  return this.srManagerService.putRessource(url, dto);
-}
+  saveFromMouvement(FromRequest: FromMouvementRequestDTO): Promise<any[]> {
+    const url = `${environment.frommvtapi}/saveFromMouvement`;
+    console.log("Sending request to:", url);
+    console.log("Request payload:", FromRequest);
+
+    return new Promise((resolve, reject) => {
+      this.srManagerService
+        .postRessource(url, FromRequest)
+        .subscribe((response: any) => {
+          this.onFromMouvementChanged.next(response);
+          resolve(response);
+        }, reject);
+    });
+
+    //return this.srManagerService.postRessource(url, imputationRequest);
+  }
+  updateFrom(dto: FromMouvementRequestDTO): Promise<any[]> {
+    console.log(dto);
+    const url = `${environment.frommvtapi}/updateMouvement`;
+
+    return new Promise((resolve, reject) => {
+      this.srManagerService
+        .putRessource(url, dto)
+        .subscribe((response: any) => {
+          this.onFromMouvementChanged.next(response);
+          resolve(response);
+        }, reject);
+    });
+  }
+
+  saveImputation(imputationRequest: TripImputationRequestDTO): Promise<any[]> {
+    const url = `${environment.tripimpapi}/saveImputation`;
+    console.log("Sending request to:", url);
+    console.log("Request payload:", imputationRequest);
+
+    return new Promise((resolve, reject) => {
+      this.srManagerService
+        .postRessource(url, imputationRequest)
+        .subscribe((response: any) => {
+          this.onImputationsChanged.next(response);
+          resolve(response);
+        }, reject);
+    });
+
+    //return this.srManagerService.postRessource(url, imputationRequest);
+  }
+  updateImputation(dto: TripImputationRequestDTO): Promise<any[]> {
+    console.log(dto);
+    const url = `${environment.tripimpapi}/updateImputation/${dto.id}`;
+
+    return new Promise((resolve, reject) => {
+      this.srManagerService
+        .putRessource(url, dto)
+        .subscribe((response: any) => {
+          this.onImputationsChanged.next(response);
+          resolve(response);
+        }, reject);
+    });
+  }
 }

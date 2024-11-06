@@ -25,13 +25,14 @@ export class AffectationAffaireChauffeurComponent implements OnInit {
 
   vehiculeGpsLocationId: number = 0;
   vehiculeName: string = "";
-  chauffeurId: number = 0;
+  //chauffeurId: number = 0;
   costPerKm: number = 0.0;
   model: string = ""; 
   plateNumber: string = ""; 
   device: string = "";
   chauffeurs: Chauffeur[] = [];
   private _unsubscribeAll: Subject<any>;
+  selectedDrive: Chauffeur;
 
   constructor(
     private _coreSidebarService: CoreSidebarService,
@@ -52,16 +53,14 @@ export class AffectationAffaireChauffeurComponent implements OnInit {
       console.log("selectedVehicle changed:", this.selectedVehicle);
       this.vehiculeGpsLocationId = this.selectedVehicle.vehicleId || 0;
       this.vehiculeName = this.selectedVehicle.name || "";
-      this.chauffeurId = this.selectedVehicle.chauffeur
-        ? this.selectedVehicle.chauffeur.id || 0
-        : 0;
+      this.selectedDrive = this.selectedVehicle.chauffeur;
       this.costPerKm = this.selectedVehicle.costPerKm || 0.0;
       this.model = this.selectedVehicle.model || ""; 
       this.device = this.selectedVehicle.device || "";
 
       console.log("vehiculeGpsLocationId:", this.vehiculeGpsLocationId);
       console.log("vehiculeName:", this.vehiculeName);
-      console.log("chauffeurId:", this.chauffeurId);
+      console.log("chauffeur name:", this.selectedDrive.name);
       console.log("costPerKm:", this.costPerKm);
       console.log("model:", this.model); // Log model
       console.log("Code Vehicule:", this.device); // Log
@@ -76,7 +75,7 @@ export class AffectationAffaireChauffeurComponent implements OnInit {
     console.log("Request Payload:");
     console.log({
       vehiculeGpsLocationId: this.vehiculeGpsLocationId,
-      chauffeurId: this.chauffeurId,
+      chauffeurId: this.selectedDrive.id,
       costPerKm: this.costPerKm,
       model: this.model,
       device: this.device, // Ensure 'device' field is correct
@@ -84,15 +83,14 @@ export class AffectationAffaireChauffeurComponent implements OnInit {
   
     if (
       this.vehiculeGpsLocationId &&
-      this.chauffeurId &&
+      this.selectedDrive &&
       this.costPerKm !== null &&
       this.model !== null &&
       this.device !== null
     ) {
-      this.vehiculeGpsLocationService
-        .associateChauffeurAndPrice(
+      this.vehiculeGpsLocationService.associateChauffeurAndPrice(
           this.vehiculeGpsLocationId,
-          this.chauffeurId,
+          this.selectedDrive.id,
           this.costPerKm,
           this.model,
           this.vehiculeName,

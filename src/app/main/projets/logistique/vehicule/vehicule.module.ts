@@ -8,6 +8,7 @@ import {CoreSidebarModule} from "../../../../../@core/components";
 import {CoreCommonModule} from "../../../../../@core/common.module";
 import {NgbDropdownModule} from "@ng-bootstrap/ng-bootstrap";
 import {RouterModule, Routes} from "@angular/router";
+import {NgSelectModule} from "@ng-select/ng-select";
 
 
 const routes: Routes = [
@@ -34,7 +35,8 @@ const routes: Routes = [
         FormsModule,
         CoreSidebarModule,
         CoreCommonModule,
-        NgbDropdownModule
+        NgbDropdownModule,
+        NgSelectModule
     ]
 })
 export class VehiculeModule { }

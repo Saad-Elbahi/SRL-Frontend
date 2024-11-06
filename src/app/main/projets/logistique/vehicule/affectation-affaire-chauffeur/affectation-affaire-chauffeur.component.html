@@ -24,18 +24,32 @@
 
                     <!-- Vehicle Plate Number -->
                     <div class="form-group">
-                        <label class="form-label" for="device">Code Vehicule</label>
+                        <label class="form-label" for="vehiculeDevice">Code Vehicule</label>
                         <input type="text" class="form-control" id="vehiculeDevice" placeholder="Code Vehicule "
                             name="vehiculeDevice" [(ngModel)]="device" required />
                     </div>
                     <!-- Chauffeur -->
                     <div class="form-group">
-                        <label class="form-label" for="chauffeurId">Chauffeur</label>
+                        <!--<label class="form-label" for="chauffeurId">Chauffeur</label>
                         <select class="form-control" id="chauffeurId" name="chauffeurId" [(ngModel)]="chauffeurId"
                             required>
-                            <option *ngFor="let chauffeur of chauffeurs" [value]="chauffeur.id">{{ chauffeur.name }}
+                            <option *ngFor="let chauffeur of chauffeurs" [value]="chauffeur.id">
+                                {{ chauffeur.name }}
                             </option>
-                        </select>
+                        </select>-->
+
+
+                        <label for="chauffeurId">Chauffeur</label>
+                        <fieldset class="form-group">
+                            <ng-select
+                                    id="chauffeurId"
+                                    [clearable]="false"
+                                    [items]="chauffeurs"
+                                    [(ngModel)]="selectedDrive"
+                                    name="chauffeurs"
+                                    bindLabel="name">
+                            </ng-select>
+                        </fieldset>
                     </div>
 
                     <!-- Cost Per KM -->

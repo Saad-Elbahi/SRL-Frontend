@@ -25,13 +25,15 @@ import { VehiculeRouteService } from "../vehicule-route.service";
 import { AffaireService } from "../../affaire/affaire.service";
 import { FournisseurService } from "../../fournisseur/fournisseur.service";
 import { AssociateFromToRequestDTO } from "../../models/DTO/AssociateFromToRequestDTO";
-import { ImputationRequestDTO } from "../../models/DTO/ImputationRequestDTO";
 import { UpdateFillingPercentageDTO } from "../../models/DTO/UpdateFillingPercentageDTO";
 import { UpdateMouvementDTO } from "../../models/DTO/UpdateMouvementDTO";
-import { TripImputationDTO } from "../../models/DTO/TripImputationDTO";
+import { TripImputationRequestDTO } from "../../models/DTO/TripImputationRequestDTO";
 import { Client } from "../../models/client";
 import { Lot } from "../../models/lot";
 import { Soustraitant } from "../../models/soustraitant";
+import { TripImputationResponseDTO } from "../../models/DTO/TripImputationResponseDTO";
+import { FromMouvementResponseDTO } from "../../models/DTO/FromMouvementResponseDTO";
+import { FromMouvementRequestDTO } from "../../models/DTO/FromMouvementRequestDTO";
 
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
@@ -94,10 +96,45 @@ export class VehiculeMouvementListComponent implements OnInit {
   } = {};
   //--------------------------------------------
   vehiculeRouteId: number | undefined;
-  imputations: TripImputationDTO[] = [];
+  imputations: TripImputationResponseDTO[] = [];
+
   //-----------------------------------------------
   filterType: string = "";
   rows: VehiculeRoute[] = [];
+
+  tripImputationResponseDTO: TripImputationResponseDTO = {
+    id: null,
+    affaireId: null,
+    fillingPercentage: 0,
+    observation: "",
+    client: null,
+    lot: null,
+    subContractorId: null,
+    costImputation: null,
+    affaireCode: "",
+    subContractorFullName: "",
+  };
+  fromMouvementResponseDTO: FromMouvementResponseDTO = {
+    id: 0,
+    vehiculeRouteId: 0,
+    affaireId: 0,
+    affaireCode: "",
+    fournisseurId: 0,
+    fournisseurName: "",
+    bl: "",
+    blMontant: 0,
+    dateBl: new Date(),
+  };
+
+  currentFromMouvement: FromMouvementRequestDTO;
+  isFournisseurDisabled: boolean = false;
+  isAffaireDisabled: boolean = false;
+
+  @ViewChild("addImputationModal") addImputationModal: TemplateRef<any>;
+  @ViewChild("editeImputationModal") editeImputationModal: TemplateRef<any>;
+  @ViewChild("addFromMouvementModal") addFromMouvementModal: TemplateRef<any>;
+  @ViewChild("editeFromMouvementModal")
+  editeFromMouvementModal: TemplateRef<any>;
 
   constructor(
     private vehiculeRouteService: VehiculeRouteService,
@@ -117,6 +154,26 @@ export class VehiculeMouvementListComponent implements OnInit {
     this.filterData();
     this.fetchClients();
     this.fetchLots();
+
+    this.vehiculeRouteService.onImputationsChanged
+      .pipe(takeUntil(this._unsubscribeAll))
+      .subscribe((imputations) => {
+        if (imputations) {
+          this.imputations = imputations;
+        } else {
+          this.imputations = [];
+        }
+      });
+
+    this.vehiculeRouteService.onFromMouvementChanged
+      .pipe(takeUntil(this._unsubscribeAll))
+      .subscribe((fromMouvements) => {
+        if (fromMouvements) {
+          this.fromMouvements = fromMouvements;
+        } else {
+          this.fromMouvements = [];
+        }
+      });
   }
 
   filterData(filterType: string = ""): void {
@@ -200,36 +257,57 @@ export class VehiculeMouvementListComponent implements OnInit {
       }
     );
   }
+  openModalFromTo(associationModal: any, vehiculeRoute: VehiculeRoute) {
+    this.selectedVehiculeRoute = vehiculeRoute;
+    this.vehiculeRouteId = vehiculeRoute?.id;
 
-  openModal(modal: TemplateRef<any>, route: VehiculeRoute): void {
-    this.selectedVehiculeRoute = route;
+    if (!this.vehiculeRouteId) {
+      console.error("Vehicule Route ID is missing, cannot open modal.");
+      return;
+    }
 
-    this.vehiculeRouteService
-      .getFromMouvementByVehiculeRouteId(this.selectedVehiculeRoute.id!)
-      .then((fromMouvements: FromMouvement[]) => {
-        if (fromMouvements && fromMouvements.length > 0) {
-          this.fromMouvements = fromMouvements.map((fromMouvement) => {
-            const correspondingAffaire = this.affaires.find(
-              (affaire) => affaire.id === fromMouvement.affaire?.id
-            );
-            const correspondingFournisseur = this.fournisseurs.find(
-              (fournisseur) => fournisseur.id === fromMouvement.fournisseur?.id
-            );
-            const dateBl = fromMouvement.dateBl
-              ? new Date(fromMouvement.dateBl)
-              : null;
-
-            return {
-              ...fromMouvement,
-              affaire: correspondingAffaire,
-              fournisseur: correspondingFournisseur,
-              dateBl: dateBl,
-            };
-          });
+    Promise.all([this.loadAffaires(), this.loadFournisseurs()])
+      .then(() => {
+        if (!this.affaires || this.affaires.length === 0) {
+          console.warn("Affaires not loaded correctly.");
+        }
+        if (!this.fournisseurs || this.fournisseurs.length === 0) {
+          console.warn("Fournisseurs not loaded correctly.");
         }
 
-        // Open modal to display the fromMouvements
-        this.modalService.open(modal, {
+        return this.vehiculeRouteService.getFromMouvementByVehiculeRouteId(
+          this.vehiculeRouteId
+        );
+      })
+      .then((fromMouvements: FromMouvementRequestDTO[]) => {
+        this.fromMouvements = fromMouvements.map((fromMouvement) => {
+          const correspondingAffaire = this.affaires.find(
+            (affaire) => affaire.id === fromMouvement.affaireId
+          ) || { id: null, code: fromMouvement.affaireCode || "-" };
+
+          const correspondingFournisseur = this.fournisseurs.find(
+            (fournisseur) => fournisseur.id === fromMouvement.fournisseurId
+          ) || {
+            id: null,
+            intituleFournisseur: fromMouvement.fournisseurName || "-",
+          };
+
+          return new FromMouvement({
+            id: fromMouvement.id,
+            affaire: correspondingAffaire,
+            fournisseur: correspondingFournisseur,
+            bl: fromMouvement.bl,
+            blMontant: fromMouvement.blMontant,
+            dateBl: fromMouvement.dateBl,
+          });
+        });
+
+        console.log(
+          "Final fromMouvements to display in modal:",
+          this.fromMouvements
+        );
+
+        this.modalService.open(associationModal, {
           size: "xl",
           centered: true,
         });
@@ -243,23 +321,6 @@ export class VehiculeMouvementListComponent implements OnInit {
     this.modalService.dismissAll();
   }
 
-  addFromMouvement(): void {
-    const newMouvement: FromMouvement = {
-      affaire: null,
-      fournisseur: null,
-      bl: "",
-      blMontant: 0,
-      dateBl: new Date(),
-    };
-    this.fromMouvements.push(newMouvement);
-    // Initialize the mapping for the new mouvement
-  }
-
-  /*  removeFromMouvement(fromMouvement: FromMouvement): void {
-       this.fromMouvements = this.fromMouvements.filter(
-         (fm) => fm !== fromMouvement
-       );
-     } */
   removeFromMouvement(fromMouvement: FromMouvement): void {
     console.log("Remove button clicked for:", fromMouvement);
 
@@ -311,333 +372,297 @@ export class VehiculeMouvementListComponent implements OnInit {
     });
   }
 
-  onAffaireChange(index: number): void {
-    this.disabledStates[index] = {
-      disableFournisseur: true,
-      disableAffaire: false,
-    };
+  onAffaireChange(): void {
+    if (this.currentFromMouvement.affaireId) {
+      this.isFournisseurDisabled = true;
+    } else {
+      this.isFournisseurDisabled = false;
+      this.currentFromMouvement.fournisseurId = null;
+    }
   }
-
-  onFournisseurChange(index: number): void {
-    this.disabledStates[index] = {
-      disableFournisseur: false,
-      disableAffaire: true,
-    };
-  }
-
-  saveAssociation(): void {
-    const fromMouvements = this.fromMouvements.map((mouvement) => ({
-      affaire: mouvement.affaire ? { id: mouvement.affaire.id } : null,
-      fournisseur: mouvement.fournisseur
-        ? { id: mouvement.fournisseur.id }
-        : null,
-      bl: mouvement.bl,
-      blMontant: mouvement.blMontant,
-      dateBl: new Date(mouvement.dateBl),
-    }));
-
-    const request: AssociateFromToRequestDTO = {
-      vehiculeRouteId: this.selectedVehiculeRoute.id,
-      fromMouvements: fromMouvements,
-    };
-
-    this.vehiculeRouteService.associateFromTo(request).subscribe(
-      (response) => {
-        Swal.fire({
-          title: "Success!",
-          text: "Association saved successfully.",
-          icon: "success",
-          confirmButtonText: "OK",
-        }).then(() => {
-          this.closeModal();
-          this.loadRoutes();
-        });
-      },
-      (error) => {
-        console.error("Error saving association:", error);
-        Swal.fire({
-          title: "Error!",
-          text: "There was an error saving the association.",
-          icon: "error",
-          confirmButtonText: "OK",
-        });
-      }
+  // Method to reset the FromMouvement data
+  resetFromMouvement() {
+    this.currentFromMouvement = new FromMouvementRequestDTO(
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      "",
+      0,
+      new Date()
     );
+    this.isAffaireDisabled = false;
+    this.isFournisseurDisabled = false;
+  }
+  onFournisseurChange(): void {
+    if (this.currentFromMouvement.fournisseurId) {
+      this.isAffaireDisabled = true;
+    } else {
+      this.isAffaireDisabled = false;
+    }
   }
 
-  //logic Model details
-  openDetailModal(modal: TemplateRef<any>, vehiculeRouteId: number) {
-    this.vehiculeRouteService.getVehiculeRouteById(vehiculeRouteId).subscribe(
-      (data: any[]) => {
-        this.fromMouvements = data;
-        //console.log('FromMouvements:', this.fromMouvements); // Log the data to verify
-        this.modalService.open(modal, { size: "xl", centered: true });
-      },
-      (error) => console.error("Error fetching fromMouvements", error)
-    );
+  openAddFromMouvementModal() {
+    this.resetFromMouvement();
+    this.modalService.open(this.addFromMouvementModal, {
+      size: "lg",
+      centered: true,
+    });
   }
 
-  //------------------------------------------------------------------imputation Worked
-  /*    isInputsDisabled = false;
-    currentImputation: TripImputationDTO | null = null;
-     */
-  /*  async getImputations(vehiculeRouteId: number, content: any) {
+  saveFromMouvement(modal: any) {
+    if (!this.selectedVehiculeRoute) {
+      Swal.fire(
+        "Erreur",
+        "Veuillez sélectionner une Route de Véhicule avant de sauvegarder.",
+        "error"
+      );
+      return;
+    }
+  
+    if (!this.currentFromMouvement || this.currentFromMouvement.blMontant < 0) {
+      Swal.fire("Erreur", "Données invalides. Veuillez vérifier vos entrées.", "error");
+      return;
+    }
+  
+    Swal.fire({
+      title: "Êtes-vous sûr ?",
+      text: "Vous êtes sur le point de sauvegarder le Mouvement d'origine.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Oui, sauvegardez-le !",
+      cancelButtonText: "Non, annulez !",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         try {
-            const data = await this.vehiculeRouteService.getImputationByVehiculeRouteId(vehiculeRouteId);
-            this.imputations = data as TripImputationDTO[];
-            this.modalService.open(content, { size: 'xl', centered: true });
+          const selectedAffaire = this.affaires.find(
+            (f) => f.id === this.currentFromMouvement.affaireId
+          );
+          this.currentFromMouvement.affaireCode = selectedAffaire
+            ? selectedAffaire.code
+            : "";
+          const selectedFournisseur = this.fournisseurs.find(
+            (f) => f.id === this.currentFromMouvement.fournisseurId
+          );
+          this.currentFromMouvement.fournisseurName = selectedFournisseur
+            ? selectedFournisseur.intituleFournisseur
+            : "";
+  
+          const fromMouvementRequestDTO = new FromMouvementRequestDTO(
+            this.currentFromMouvement.id,
+            this.selectedVehiculeRoute.id,
+            this.currentFromMouvement.affaireId || null,
+            this.currentFromMouvement.affaireCode || "",
+            this.currentFromMouvement.fournisseurId || null,
+            this.currentFromMouvement.fournisseurName || "",
+            this.currentFromMouvement.bl,
+            this.currentFromMouvement.blMontant,
+            new Date(this.currentFromMouvement.dateBl)
+          );
+  
+          await this.vehiculeRouteService.saveFromMouvement(
+            fromMouvementRequestDTO
+          );
+  
+          Swal.fire(
+            "Succès",
+            "Mouvement d'origine sauvegardé avec succès.",
+            "success"
+          ).then(() => {
+            modal.close();
+            this.refreshFromMouvements();
+          });
         } catch (error) {
-            console.error("Error fetching imputations:", error);
+          Swal.fire(
+            "Erreur",
+            "Une erreur est survenue lors de la sauvegarde du Mouvement d'origine.",
+            "error"
+          );
+          console.error("Erreur :", error);
         }
-    }
-    
-    openModals(content: any, route: VehiculeRoute) {
-        this.selectedVehiculeRoute = route;
-        this.vehiculeRouteId = route?.id;
-    
-        if (!this.vehiculeRouteId) {
-            console.error("Vehicule Route ID is missing, cannot open modal.");
-            return;
-        }
-    
-        this.vehiculeRouteService.imputationByVehiculeRoute(this.vehiculeRouteId).subscribe({
-            next: (imputations) => {
-                if (Array.isArray(imputations)) {
-                    this.imputations = imputations.map(imputation => new TripImputationDTO(
-                        imputation.id || null,
-                        imputation.affaireId,
-                        imputation.affaireCode,
-                        imputation.fillingPercentage || 0,
-                        imputation.observation || '',
-                        imputation.client?.id || null,
-                        imputation.lot?.id || null,
-                        imputation.subContractorId,
-                        imputation.subContractorFullName,
-                        imputation.costImputation || 0
-                    ));
-                } else {
-                    console.warn("Imputations data is not an array:", imputations);
-                    this.imputations = [];
-                }
-    
-                this.modalService.open(content, { size: "xl", centered: true });
-            },
-            error: (error) => {
-                console.error("Error fetching imputations:", error);
-                Swal.fire({
-                    icon: "error",
-                    title: "Error Fetching Imputations",
-                    text: "Could not retrieve imputations for the selected route.",
-                });
-            },
+      }
+    });
+  }
+  
+
+  refreshFromMouvements() {
+    this.vehiculeRouteService
+      .getFromMouvementByVehiculeRouteId(this.vehiculeRouteId)
+      .then((fromMouvements: FromMouvementResponseDTO[]) => {
+        this.fromMouvements = fromMouvements.map((fromMouvement) => {
+          const correspondingAffaire = this.affaires.find(
+            (affaire) => affaire.id === fromMouvement.affaireId
+          ) || { id: null, code: fromMouvement.affaireCode || "-" };
+
+          const correspondingFournisseur = this.fournisseurs.find(
+            (fournisseur) => fournisseur.id === fromMouvement.fournisseurId
+          ) || {
+            id: null,
+            intituleFournisseur: fromMouvement.fournisseurName || "-",
+          };
+
+          return new FromMouvement({
+            id: fromMouvement.id,
+            affaire: correspondingAffaire,
+            fournisseur: correspondingFournisseur,
+            bl: fromMouvement.bl,
+            blMontant: fromMouvement.blMontant,
+            dateBl: fromMouvement.dateBl,
+          });
         });
-    }
-    
-    addImputation() {
-        const newImputation = new TripImputationDTO(
-            null, null, "", 0, "", null, null, null, "", 0, null, null
-        );
-        this.imputations.push(newImputation);
-    }
-    
-    removeImputation(imputation: TripImputationDTO): void {
-        const isNew = !imputation.id;
-        Swal.fire({
-            title: 'Êtes-vous sûr ?',
-            text: isNew ? 'Cette imputation sera supprimée sans être enregistrée.' : 'Cette imputation sera définitivement supprimée !',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Oui, supprimez-la !',
-            cancelButtonText: 'Annuler'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                if (isNew) {
-                    this.imputations = this.imputations.filter(i => i !== imputation);
-                    Swal.fire('Supprimé !', 'L\'imputation a été supprimée.', 'success');
-                } else {
-                    this.vehiculeRouteService.deleteImputation(imputation.id).subscribe({
-                        next: () => {
-                            this.imputations = this.imputations.filter(i => i !== imputation);
-                            Swal.fire('Supprimé !', 'L\'imputation a été supprimée.', 'success');
-                        },
-                        error: (error) => {
-                            console.error("Erreur lors de la suppression de l'imputation :", error);
-                            Swal.fire('Erreur !', 'Il y a eu un problème lors de la suppression de l\'imputation.', 'error');
-                        }
-                    });
-                }
-            }
-        });
-    }
-    
-    saveImputationAssociation() {
-        if (!this.vehiculeRouteId) {
-            Swal.fire({
-                icon: "error",
-                title: "Vehicule Route ID Missing",
-                text: "Please select a Vehicule Route before saving.",
-            });
-            return;
-        }
-    
-        if (!this.imputations || this.imputations.length === 0) {
-            Swal.fire({
-                icon: "error",
-                title: "Imputations Missing",
-                text: "Please add at least one imputation before saving.",
-            });
-            return;
-        }
-    
-        const totalFillingPercentage = this.imputations.reduce((sum, imp) => sum + imp.fillingPercentage, 0);
-        if (totalFillingPercentage > 100) {
-            Swal.fire({
-                icon: "error",
-                title: "Total Filling Percentage Exceeded",
-                text: "Total filling percentage exceeds 100%.",
-            });
-            return;
-        }
-    
-        Swal.fire({
-            title: "Are you sure?",
-            text: "You are about to save the imputation association.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Yes, save it!",
-            cancelButtonText: "No, cancel!",
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                // Separate new and existing imputations
-                const newImputations = this.imputations.filter(imp => !imp.id);
-                const existingImputations = this.imputations.filter(imp => imp.id);
-    
-                try {
-                    // Process new imputations
-                    if (newImputations.length > 0) {
-                        const imputationRequest: ImputationRequestDTO = {
-                            vehiculeRouteId: this.vehiculeRouteId,
-                            imputations: newImputations.map((imputation) => ({
-                                id: imputation.id,
-                                affaireId: imputation.affaireId,
-                                fillingPercentage: imputation.fillingPercentage,
-                                observation: imputation.observation,
-                                clientId: imputation.clientId,
-                                lotId: imputation.lotId,
-                                subContractorId: imputation.subContractorId,
-                                costImputation: imputation.costImputation,
-                                affaireCode: imputation.affaireCode || "",
-                                subContractorFullName: imputation.subContractorFullName || ""
-                            })),
-                        };
-    
-                        await this.vehiculeRouteService.associateImputation(imputationRequest).toPromise();
-                    }
-    
-                    // Process existing imputations
-                    for (const imputation of existingImputations) {
-                        await this.vehiculeRouteService.updateImputation(imputation);
-                    }
-    
-                    // Mark all imputations as saved and disable inputs
-                    this.imputations.forEach(imputation => imputation.isSaved = true);
-                    this.isInputsDisabled = true;
-    
-                    Swal.fire("Success!", "Imputations associated and updated successfully.", "success");
-    
-                    
-                } catch (error) {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Error",
-                        text: "There was an error saving or updating imputations.",
-                    });
-                    console.error("Error saving or updating imputations:", error);
-                }
-            }
-        });
-    }
-    
-    
-    
-    getTotalCostImputation(): number {
-        return this.imputations.reduce((total, imputation) => total + (imputation.costImputation || 0), 0);
-    }
-    
-    enableEdit(imputation: TripImputationDTO) {
-        this.isInputsDisabled = false;
-        this.currentImputation = imputation;
-    } */
-
-
-
-
-  //new Structure Imputation ----02/11/2024-----------------------------------------------------------------------------------
-  newImputation: any = {}; // Object to hold new imputation details
-  @ViewChild("addImputationModal") addImputationModal: TemplateRef<any>;
-  @ViewChild("editeImputationModal") editeImputationModal: TemplateRef<any>;
-  async getImputations(vehiculeRouteId: number, content: any) {
-    try {
-      const data =
-        await this.vehiculeRouteService.getImputationByVehiculeRouteId(
-          vehiculeRouteId
-        );
-      this.imputations = data as TripImputationDTO[];
-      this.modalService.open(content, { size: "xl", centered: true });
-    } catch (error) {
-      console.error("Error fetching imputations:", error);
-    }
+      })
+      .catch((error) =>
+        console.error("Error refreshing FromMouvement data:", error)
+      );
   }
 
-  openModals(content: any, route: VehiculeRoute) {
-    this.selectedVehiculeRoute = route;
-    this.vehiculeRouteId = route?.id;
+  openEditFromMouvementModal(fromMouvement: FromMouvementResponseDTO) {
+    this.fromMouvementResponseDTO = fromMouvement;
+
+ /*    this.fromMouvementResponseDTO.affaire = {
+      id: fromMouvement.affaireId,
+      code: fromMouvement.affaireCode,
+      intitule: fromMouvement.affaireCode,
+      typeProjet: "",
+      villeintitule: "",
+      chefZoneFullName: "",
+      chefZoneUsername: "",
+    };
+
+    this.fromMouvementResponseDTO.fournisseur = {
+      id: fromMouvement.fournisseurId,
+      abbreviationFournisseur: fromMouvement.fournisseurName,
+      intituleFournisseur: fromMouvement.fournisseurName,
+      adresseFournisseur: "",
+      ice: "",
+      email: "",
+      telephone: "",
+      contact: "",
+    }; */
+
+    // Open the modal
+    this.modalService.open(this.editeFromMouvementModal, {
+      size: "lg",
+      centered: true,
+    });
+  }
+
+  onAffaireChangeedite() {
+    const selectedAffaireId = this.fromMouvementResponseDTO.affaireId;
+    console.log("Selected Affaire ID:", selectedAffaireId);
+  }
+
+  onFournisseurChangeedite() {
+    const selectedFournisseurId = this.fromMouvementResponseDTO.fournisseurId;
+    console.log("Selected Fournisseur ID:", selectedFournisseurId);
+  }
+
+  async updateFromMouvement(modal: any) {
+    if (!this.vehiculeRouteId) {
+      Swal.fire(
+        "Erreur",
+        "Veuillez sélectionner une Route de Véhicule avant de sauvegarder.",
+        "error"
+      );
+      return;
+    }
+  
+    const fromMouvement: FromMouvementRequestDTO = {
+      id: this.fromMouvementResponseDTO.id,
+      vehiculeRouteId: this.vehiculeRouteId,
+      affaireId: this.fromMouvementResponseDTO.affaireId,
+      affaireCode: this.fromMouvementResponseDTO.affaireCode || "",
+      fournisseurId: this.fromMouvementResponseDTO.fournisseurId || null,
+      fournisseurName: this.fromMouvementResponseDTO.fournisseurName || "",
+      bl: this.fromMouvementResponseDTO.bl || "",
+      blMontant: this.fromMouvementResponseDTO.blMontant,
+      dateBl: this.fromMouvementResponseDTO.dateBl,
+    };
+  
+    console.log("Mise à jour du Mouvement d'origine avec :", fromMouvement);
+  
+    try {
+      if (this.fromMouvementResponseDTO.id) {
+        await this.vehiculeRouteService.updateFrom(fromMouvement);
+        Swal.fire("Succès", "Mouvement d'origine mis à jour avec succès.", "success");
+  
+        this.refreshFromMouvements();
+      }
+      modal.close("Clic accepté");
+    } catch (error) {
+      Swal.fire(
+        "Erreur",
+        "Une erreur est survenue lors de la sauvegarde du Mouvement d'origine.",
+        "error"
+      );
+      console.error("Erreur lors de la sauvegarde du Mouvement d'origine :", error);
+    }
+  }
+  
+  
+  //new Structure Imputation ----02/11/2024-----------------------------------------------------------------------------------
+
+  /*  async getImputations(vehiculeRouteId: number, content: any) {
+          try {
+              const data =
+                  await this.vehiculeRouteService.getImputationByVehiculeRouteId(vehiculeRouteId);
+              this.imputations = data as TripImputationRequestDTO[];
+              this.modalService.open(content, {size: "xl", centered: true});
+          } catch (error) {
+              console.error("Error fetching imputations:", error);
+          }
+      }*/
+
+  openModalsViewImputations(
+    modalImputations: any,
+    vehiculeRoute: VehiculeRoute
+  ) {
+    this.selectedVehiculeRoute = vehiculeRoute;
+    this.vehiculeRouteId = vehiculeRoute?.id;
 
     if (!this.vehiculeRouteId) {
       console.error("Vehicule Route ID is missing, cannot open modal.");
       return;
     }
 
-    this.vehiculeRouteService
-      .imputationByVehiculeRoute(this.vehiculeRouteId)
-      .subscribe({
-        next: (imputations) => {
-          if (Array.isArray(imputations)) {
-            this.imputations = imputations.map(
-              (imputation) =>
-                new TripImputationDTO(
-                  imputation.id || null,
-                  imputation.affaireId,
-                  imputation.affaireCode,
-                  imputation.fillingPercentage || 0,
-                  imputation.observation || "",
-                  imputation.client ? imputation.client.id : null, // Ensure client mapping
-                  imputation.lot ? imputation.lot.id : null, // Ensure lot mapping
-                  imputation.subContractorId,
-                  imputation.subContractorFullName,
-                  imputation.costImputation || 0
-                )
-            );
-            this.modalService.open(content, { size: "xl", centered: true });
-          } else {
-            console.warn("Imputations data is not an array:", imputations);
-            this.imputations = [];
-          }
-        },
-        error: (error) => {
-          console.error("Error fetching imputations:", error);
-          Swal.fire({
-            icon: "error",
-            title: "Error Fetching Imputations",
-            text: "Could not retrieve imputations for the selected route.",
-          });
-        },
-      });
+    /*this.vehiculeRouteService.onImputationsChanged.pipe(takeUntil(this._unsubscribeAll)).subscribe(
+            (imputations) => {
+                if (Array.isArray(imputations)) {
+                    this.imputations = imputations.map((imputation) =>
+                        new TripImputationDTO(
+                            imputation.id || null,
+                            imputation.affaireId,
+                            imputation.affaireCode,
+                            imputation.fillingPercentage || 0,
+                            imputation.observation || "",
+                            imputation.client ? imputation.client.id : null, // Ensure client mapping
+                            imputation.lot ? imputation.lot.id : null, // Ensure lot mapping
+                            imputation.subContractorId,
+                            imputation.subContractorFullName,
+                            imputation.costImputation || 0
+                        )
+                    );
+                    this.modalService.open(modalImputations, {size: "xl", centered: true});
+                } else {
+                    console.warn("Imputations data is not an array:", imputations);
+                    this.imputations = [];
+                }
+            },  (error) => {
+                console.error("Error fetching imputations:", error);
+                Swal.fire({
+                    icon: "error",
+                    title: "Error Fetching Imputations",
+                    text: "Could not retrieve imputations for the selected route.",
+                });
+            }
+        )*/
+    this.vehiculeRouteService.imputationByVehiculeRoute(this.vehiculeRouteId);
+    this.modalService.open(modalImputations, { size: "xl", centered: true });
   }
 
-  removeImputation(imputation: TripImputationDTO): void {
+  removeImputation(imputation: TripImputationResponseDTO): void {
     const isNew = !imputation.id;
     Swal.fire({
       title: "Êtes-vous sûr ?",
@@ -685,7 +710,7 @@ export class VehiculeMouvementListComponent implements OnInit {
   }
 
   addImputation() {
-    const newImputation = new TripImputationDTO(
+    const newImputation = new TripImputationResponseDTO(
       null,
       null,
       "",
@@ -696,27 +721,13 @@ export class VehiculeMouvementListComponent implements OnInit {
       null,
       "",
       0,
-      null,
       null
     );
     this.imputations.push(newImputation);
   }
+
   //reset data and initializ imputation
-  resetImputationData() {
-    this.vehiculeRouteId = null;
-    this.newImputation = {
-      id: null,
-      affaireId: null,
-      fillingPercentage: 0,
-      observation: '',
-      clientId: null,
-      lotId: null,
-      subContractorId: null,
-      costImputation: null,
-      affaireCode: '',
-      subContractorFullName: '',
-    };
-  }
+
   //save Imputation Modal
   async saveImputation(modal: any) {
     // Check if the vehiculeRouteId is present
@@ -730,7 +741,7 @@ export class VehiculeMouvementListComponent implements OnInit {
     }
 
     // Check if the imputation is present
-    if (!this.newImputation) {
+    if (!this.tripImputationResponseDTO) {
       Swal.fire({
         icon: "error",
         title: "Imputation Missing",
@@ -740,7 +751,7 @@ export class VehiculeMouvementListComponent implements OnInit {
     }
 
     // Check if fillingPercentage is valid
-    if (this.newImputation.fillingPercentage > 100) {
+    if (this.tripImputationResponseDTO.fillingPercentage > 100) {
       Swal.fire({
         icon: "error",
         title: "Filling Percentage Exceeded",
@@ -759,29 +770,25 @@ export class VehiculeMouvementListComponent implements OnInit {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const imputationRequest: ImputationRequestDTO = {
+          const tripImputationRequestDTO: TripImputationRequestDTO = {
+            id: this.tripImputationResponseDTO.id,
+            affaireId: this.tripImputationResponseDTO.affaireId,
+            affaireCode: this.tripImputationResponseDTO.affaireCode || "",
             vehiculeRouteId: this.vehiculeRouteId,
-            imputations: [
-              {
-                id: this.newImputation.id,
-                affaireId: this.newImputation.affaireId,
-                fillingPercentage: this.newImputation.fillingPercentage,
-                observation: this.newImputation.observation,
-                clientId: this.newImputation.clientId,
-                lotId: this.newImputation.lotId,
-                subContractorId: this.newImputation.subContractorId,
-                costImputation: this.newImputation.costImputation,
-                affaireCode: this.newImputation.affaireCode || "",
-                subContractorFullName:
-                  this.newImputation.subContractorFullName || "",
-              },
-            ],
+            fillingPercentage: this.tripImputationResponseDTO.fillingPercentage,
+            observation: this.tripImputationResponseDTO.observation,
+            clientId: this.tripImputationResponseDTO.client?.id,
+            lotId: this.tripImputationResponseDTO.lot?.id,
+            subContractorId: this.tripImputationResponseDTO.subContractorId,
+            subContractorFullName:
+              this.tripImputationResponseDTO.affaireCode || "",
+            costImputation: this.tripImputationResponseDTO.costImputation,
           };
 
           // Call the service to save the imputation
-          await this.vehiculeRouteService
-            .associateImputation(imputationRequest)
-            .toPromise();
+          await this.vehiculeRouteService.saveImputation(
+            tripImputationRequestDTO
+          );
 
           // Show success message
           Swal.fire(
@@ -790,7 +797,7 @@ export class VehiculeMouvementListComponent implements OnInit {
             "success"
           ).then(async () => {
             // Close the modal
-            modal.dismiss();
+            modal.close("Accept click");
           });
         } catch (error) {
           Swal.fire({
@@ -803,6 +810,23 @@ export class VehiculeMouvementListComponent implements OnInit {
       }
     });
   }
+
+  resetImputationData() {
+    //this.vehiculeRouteId = null;
+    this.tripImputationResponseDTO = {
+      id: null,
+      affaireId: null,
+      fillingPercentage: 0,
+      observation: "",
+      client: null,
+      lot: null,
+      subContractorId: null,
+      costImputation: null,
+      affaireCode: "",
+      subContractorFullName: "",
+    };
+  }
+
   openAddImputationModal() {
     this.resetImputationData();
     const modalRef = this.modalService.open(this.addImputationModal, {
@@ -810,7 +834,40 @@ export class VehiculeMouvementListComponent implements OnInit {
       centered: true,
     });
   }
+
   //update Imputation modal
+
+  openEditImputationModal(imputation: TripImputationResponseDTO) {
+    //this.newImputation = { ...imputation };
+    this.tripImputationResponseDTO = imputation;
+
+    this.tripImputationResponseDTO.affaire = {
+      id: imputation.affaireId,
+      code: imputation.affaireCode,
+      intitule: imputation.affaireCode,
+      typeProjet: "",
+      villeintitule: "",
+      chefZoneFullName: "",
+      chefZoneUsername: "",
+    };
+
+    this.tripImputationResponseDTO.soustraitant = {
+      id: imputation.subContractorId,
+      fullName: imputation.subContractorFullName,
+    };
+
+    this.vehiculeRouteService
+      .getSoustraitants(imputation.affaireId)
+      .then((data: Soustraitant[]) => {
+        this.soustraitants = data;
+      });
+
+    this.modalService.open(this.editeImputationModal, {
+      size: "xl",
+      centered: true,
+    });
+  }
+
   async updateImputation(modal: any) {
     if (!this.vehiculeRouteId) {
       Swal.fire(
@@ -821,55 +878,40 @@ export class VehiculeMouvementListComponent implements OnInit {
       return;
     }
 
-    const imputationRequest: ImputationRequestDTO = {
+    var imputation: TripImputationRequestDTO = {
+      id: this.tripImputationResponseDTO.id,
+      affaireId: this.tripImputationResponseDTO.affaireId,
+      affaireCode: this.tripImputationResponseDTO.affaireCode || "",
       vehiculeRouteId: this.vehiculeRouteId,
-      imputations: [
-        {
-          id: this.newImputation.id,
-          affaireId: this.newImputation.affaireId,
-          fillingPercentage: this.newImputation.fillingPercentage,
-          observation: this.newImputation.observation,
-          clientId: this.newImputation.clientId,
-          lotId: this.newImputation.lotId,
-          subContractorId: this.newImputation.subContractorId,
-          costImputation: this.newImputation.costImputation,
-          affaireCode: this.newImputation.affaireCode || "",
-          subContractorFullName: this.newImputation.subContractorFullName || "",
-        },
-      ],
+      fillingPercentage: this.tripImputationResponseDTO.fillingPercentage,
+      observation: this.tripImputationResponseDTO.observation,
+      clientId: this.tripImputationResponseDTO.client?.id,
+      lotId: this.tripImputationResponseDTO.lot?.id,
+      subContractorId: this.tripImputationResponseDTO.subContractorId,
+      subContractorFullName: this.tripImputationResponseDTO.affaireCode || "",
+      costImputation: this.tripImputationResponseDTO.costImputation,
     };
 
     try {
-      if (this.newImputation.id) {
+      if (this.tripImputationResponseDTO.id) {
         // Update existing imputation
-        await this.vehiculeRouteService
-          .updateImputation(this.newImputation)
-          .pipe(take(1))
-          .toPromise();
+        await this.vehiculeRouteService.updateImputation(imputation);
         Swal.fire("Success", "Imputation updated successfully.", "success");
       }
       // Refresh the imputations list and close the modal
-      modal.dismiss();
+      modal.close("Accept click");
     } catch (error) {
       Swal.fire("Error", "There was an error saving the imputation.", "error");
       console.error("Error saving the imputation:", error);
     }
   }
- 
-  openEditImputationModal(imputation: TripImputationDTO) {
-    this.newImputation = { ...imputation };
-    this.modalService.open(this.editeImputationModal, {
-      size: "xl",
-      centered: true,
-    });
-  }
 
   isFormValid(): boolean {
     return (
-      this.newImputation.affaireId > 0 &&
-      this.newImputation.fillingPercentage >= 0 &&
-      this.newImputation.fillingPercentage <= 100 &&
-      this.newImputation.clientId > 0
+      this.tripImputationResponseDTO.affaireId > 0 &&
+      this.tripImputationResponseDTO.fillingPercentage >= 0 &&
+      this.tripImputationResponseDTO.fillingPercentage <= 100 &&
+      this.tripImputationResponseDTO.client != null
     );
   }
 
@@ -881,9 +923,9 @@ export class VehiculeMouvementListComponent implements OnInit {
   }
 
   /* enableEdit(imputation: TripImputationDTO) {
-    this.isInputsDisabled = false;
-    this.currentImputation = imputation;
-} */
+      this.isInputsDisabled = false;
+      this.currentImputation = imputation;
+  } */
   getAffaireCode(affaireId: number): string {
     const affaire = this.affaires.find((a) => a.id === affaireId);
     return affaire ? affaire.code : "Unknown";
@@ -1004,36 +1046,52 @@ export class VehiculeMouvementListComponent implements OnInit {
   //------------------------------------------------
 
   /*refreshData(): void {
-      // Method to refresh or reload the data
-      this.vehiculeRouteService.getAllVehiculeRoutes().then(
-        routes => {
-          this.rows = routes;
-        },
-        error => {
-          console.error('Error refreshing data', error);
-          this.toastr.error('Failed to refresh data.');
-        }
-      );
-    }*/
+        // Method to refresh or reload the data
+        this.vehiculeRouteService.getAllVehiculeRoutes().then(
+          routes => {
+            this.rows = routes;
+          },
+          error => {
+            console.error('Error refreshing data', error);
+            this.toastr.error('Failed to refresh data.');
+          }
+        );
+      }*/
   affaireSelected: Affaire;
   subContractorSelected: Soustraitant;
   mode: string = "display";
 
-  onAffaireChanged(affaireId: number) {
-    console.log("onAffaireChanged");
-    console.log(affaireId);
+  onAffaireChanged(affaire: Affaire) {
     this.soustraitants = [];
+    this.tripImputationResponseDTO.affaireCode = affaire.code;
+    this.tripImputationResponseDTO.affaireId = affaire.id;
 
     this.vehiculeRouteService
-      .getSoustraitants(affaireId)
+      .getSoustraitants(affaire.id)
       .then((data: Soustraitant[]) => {
         this.soustraitants = data;
         console.log("Soustraitants:", this.soustraitants);
       });
   }
 
-  onSubcontractorChanged(subContractorId: number) {
+  onSubcontractorChanged(subContractor: Soustraitant) {
     console.log("onSubcontractorChanged");
-    console.log(subContractorId);
+    console.log(subContractor);
+    this.tripImputationResponseDTO.subContractorId = subContractor.id;
+    this.tripImputationResponseDTO.subContractorFullName =
+      subContractor.fullName;
+
+    /*const selectedSubContractor = this.soustraitants.find(sub => sub.id === subContractorId);
+        if (selectedSubContractor) {
+            this.newImputation.subContractorId = selectedSubContractor.id;
+            this.newImputation.subContractorFullName = selectedSubContractor.fullName;
+        }*/
+  }
+
+  onFillingKeyUp() {
+    this.tripImputationResponseDTO.costImputation =
+      (this.tripImputationResponseDTO.fillingPercentage *
+        this.selectedVehiculeRoute.costPerTrip) /
+      100;
   }
 }

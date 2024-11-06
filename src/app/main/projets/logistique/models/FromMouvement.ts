@@ -11,9 +11,6 @@ export class FromMouvement {
   blMontant: number;
   dateBl: Date;
   isNew?: boolean; 
-
-  
-
   vehiculeGpsLocation?: VehiculeGpsLocation;
   vehiculeRoute?: VehiculeRoute;
 

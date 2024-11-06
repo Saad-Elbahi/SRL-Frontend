@@ -92,6 +92,7 @@ export class VehiculeListComponent implements OnInit {
 
     toggleSidebar(name: string, vehicle?: any): void {
         this.selectedVehicle = vehicle;
+        console.log(vehicle);
         this._coreSidebarService.getSidebarRegistry(name).toggleOpen();
     }
 
