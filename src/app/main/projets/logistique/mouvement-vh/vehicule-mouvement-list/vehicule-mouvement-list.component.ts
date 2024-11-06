@@ -322,28 +322,28 @@ export class VehiculeMouvementListComponent implements OnInit {
   }
 
   removeFromMouvement(fromMouvement: FromMouvement): void {
-    console.log("Remove button clicked for:", fromMouvement);
-
+    console.log("Bouton de suppression cliqué pour :", fromMouvement);
+  
     const isNew = !fromMouvement.id;
-
+  
     Swal.fire({
-      title: "Are you sure?",
+      title: "Êtes-vous sûr ?",
       text: isNew
-        ? "This entry will be removed without saving."
-        : "You won't be able to revert this!",
+        ? "Cette entrée sera supprimée sans être sauvegardée."
+        : "Vous ne pourrez pas revenir en arrière !",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
       cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-      cancelButtonText: "Cancel",
+      confirmButtonText: "Oui, supprimez-le !",
+      cancelButtonText: "Annuler",
     }).then((result) => {
       if (result.isConfirmed) {
         if (isNew) {
           this.fromMouvements = this.fromMouvements.filter(
             (fm) => fm !== fromMouvement
           );
-          Swal.fire("Deleted!", "Your mouvement has been deleted.", "success");
+          Swal.fire("Supprimé !", "Votre mouvement a été supprimé.", "success");
         } else {
           this.vehiculeRouteService
             .deleteFromMouvement(fromMouvement.id)
@@ -353,16 +353,16 @@ export class VehiculeMouvementListComponent implements OnInit {
                   (fm) => fm !== fromMouvement
                 );
                 Swal.fire(
-                  "Deleted!",
-                  "Your mouvement has been deleted.",
+                  "Supprimé !",
+                  "Votre mouvement a été supprimé.",
                   "success"
                 );
               },
               error: (error) => {
-                console.error("Error removing mouvement:", error);
+                console.error("Erreur lors de la suppression du mouvement :", error);
                 Swal.fire(
-                  "Error!",
-                  "There was a problem deleting the mouvement.",
+                  "Erreur !",
+                  "Un problème est survenu lors de la suppression du mouvement.",
                   "error"
                 );
               },
@@ -371,6 +371,7 @@ export class VehiculeMouvementListComponent implements OnInit {
       }
     });
   }
+  
 
   onAffaireChange(): void {
     if (this.currentFromMouvement.affaireId) {
