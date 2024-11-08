@@ -1,3 +1,4 @@
+import { AffaireService } from './../../affaire/affaire.service';
 import { RecapImputationService } from "./recap-imputation.service";
 import { Component, OnInit, ViewEncapsulation } from "@angular/core";
 import { ColumnMode } from "@swimlane/ngx-datatable";
@@ -8,6 +9,9 @@ import { Subject } from "rxjs";
 import { Client } from "../../models/client";
 import { Lot } from "../../models/lot";
 import { Soustraitant } from "../../models/soustraitant";
+import { Affaire } from '../../models/affaire.model';
+import { TripImputationDTO } from '../../models/DTO/TripImputationDTO';
+import { TripImputationResponseDTO } from '../../models/DTO/TripImputationResponseDTO';
 
 @Component({
   selector: "app-recap-imputation",
@@ -18,41 +22,52 @@ import { Soustraitant } from "../../models/soustraitant";
 export class RecapImputationComponent implements OnInit {
   private _unsubscribeAll: Subject<any>;
 
-  imputations: TripImputation[] = [];
+  imputations: TripImputationResponseDTO[] = [];
   vehiculeRoutes: VehiculeRoute[] = [];
-  filteredRoutes: VehiculeRoute[] = [];
-  filteredImputations: TripImputation[] = [];
-  public ColumnMode = ColumnMode;
+  filteredImputations: TripImputationResponseDTO[] = [];
 
-  selectedMonth: number | null = null;
-  selectedYear: number | null = null;
-  selectedClient: number | null = null;
-  selectedLot: number | null = null;
-  selectedSoustraitant: number | null = null;
+  // Filter criteria
+  isYearSelected: boolean = false;
+  filterDate: string;
+  filterVehiculeName: string;
+  selectedYear: number;
+  selectedMonth: number;
+  selectedClient: Client;
+  selectedLot: Lot;
+  filterAffaire: string = '';
+  selectedSoustraitant: Soustraitant;
+  filterMonth: string = '';
+  filterYear: string = '';
+  filterClient: string=''
+  filterLot:string='';
 
   months = [
-    { name: "Janvier", value: 1 },
-    { name: "Février", value: 2 },
-    { name: "Mars", value: 3 },
-    { name: "Avril", value: 4 },
-    { name: "Mai", value: 5 },
-    { name: "Juin", value: 6 },
-    { name: "Juillet", value: 7 },
-    { name: "Août", value: 8 },
-    { name: "Septembre", value: 9 },
-    { name: "Octobre", value: 10 },
-    { name: "Novembre", value: 11 },
-    { name: "Décembre", value: 12 },
+    { value: '01', name: 'January' },
+    { value: '02', name: 'February' },
+    { value: '03', name: 'March' },
+    { value: '04', name: 'April' },
+    { value: '05', name: 'May' },
+    { value: '06', name: 'June' },
+    { value: '07', name: 'July' },
+    { value: '08', name: 'August' },
+    { value: '09', name: 'September' },
+    { value: '10', name: 'October' },
+    { value: '11', name: 'November' },
+    { value: '12', name: 'December' }
   ];
 
   years: number[] = [];
   clients: Client[] = [];
   lots: Lot[] = [];
+  affaires: Affaire[] = [];
   soustraitants: Soustraitant[] = [];
+
+  public ColumnMode = ColumnMode;
 
   constructor(
     private recapImputationService: RecapImputationService,
-    private vehiculeRouteService: VehiculeRouteService
+    private vehiculeRouteService: VehiculeRouteService,
+    private affaireService: AffaireService
   ) {
     this._unsubscribeAll = new Subject();
   }
@@ -60,25 +75,26 @@ export class RecapImputationComponent implements OnInit {
   ngOnInit(): void {
     this.initializeYears();
     this.loadData();
+    const currentYear = new Date().getFullYear();
+    for (let i = currentYear; i >= currentYear - 10; i--) {
+      this.years.push(i);
+    }
+
+    this.filteredImputations = this.imputations;
   }
 
   loadData(): void {
     this.recapImputationService.getAllImputation().then(
       (imputations) => {
         this.imputations = Array.isArray(imputations) ? imputations : [];
-        console.log('Loaded Imputations:', this.imputations);
         this.filteredImputations = this.imputations;
       },
-      (error) => {
-        console.error("Error loading imputations:", error);
-      }
+      (error) => console.error("Error loading imputations:", error)
     );
-  
-  
 
     this.loadClients();
     this.loadLots();
-   // this.loadSoustraitants();
+    this.loadAffaires();
   }
 
   initializeYears(): void {
@@ -100,39 +116,59 @@ export class RecapImputationComponent implements OnInit {
     );
   }
 
- /*  loadSoustraitants(): void {
-    this.vehiculeRouteService.getSoustraitants().then(
-      (soustraitants) =>
-        (this.soustraitants = Array.isArray(soustraitants)
-          ? soustraitants
-          : []),
+  loadAffaires(): void {
+    this.affaireService.getAffaires().then(
+      (affaires) => (this.affaires = Array.isArray(affaires) ? affaires : []),
+      (error) => console.error("Error loading affaires:", error)
+    );
+  }
+
+/*   onAffaireChange(): void {
+    if (this.selectedAffaire) {
+      this.getSoustraitants(this.selectedAffaire.id);
+    } else {
+      this.soustraitants = []; // Clear soustraitants if no affaire selected
+    }
+    this.filterData();
+  } */
+
+  getSoustraitants(projectId: number): void {
+    this.vehiculeRouteService.getSoustraitants(projectId).then(
+      (soustraitants) => (this.soustraitants = Array.isArray(soustraitants) ? soustraitants : []),
       (error) => console.error("Error loading soustraitants:", error)
     );
   }
- */
-  applyFilters(): void {
-    console.log('Applying filters:', {
-      selectedMonth: this.selectedMonth,
-      selectedYear: this.selectedYear,
-      selectedClient: this.selectedClient,
-      selectedLot: this.selectedLot,
-      selectedSoustraitant: this.selectedSoustraitant,
+  onYearSelect(): void {
+    this.isYearSelected = !!this.filterYear;
+    this.filterMonth = ''; 
+    this.filterData(); 
+  }
+
+
+  filterData(): void {
+    this.filteredImputations = this.imputations.filter(item => {
+      const itemDate = new Date(item.vehiculeRoute.date);
+      const itemYear = itemDate.getFullYear().toString();
+      const itemMonth = ('0' + (itemDate.getMonth() + 1)).slice(-2);
+      const affaireMatch = this.filterAffaire ? item.affaireCode === this.filterAffaire : true;
+      const clientMatch=this.filterClient ? item.client.name === this.filterClient:true;
+      const LottMatch=this.filterLot ? item.lot.name === this.filterLot:true;
+
+
+      // Check date, month, and year filters
+      const dateMatch = this.filterDate ? itemDate.toISOString().split('T')[0] === this.filterDate : true;
+      const monthMatch = this.filterMonth ? itemMonth === this.filterMonth : true;
+      const yearMatch = this.filterYear ? itemYear === this.filterYear : true;
+
+      return dateMatch && monthMatch && yearMatch && affaireMatch && clientMatch && LottMatch;
     });
-  
-    this.filteredImputations = this.imputations.filter((imputation) => {
-      const date = imputation.vehiculeRoute?.date ? new Date(imputation.vehiculeRoute.date) : null;
-  
-      const matchesMonth = !this.selectedMonth || (date && date.getMonth() + 1 === this.selectedMonth);
-      const matchesYear = !this.selectedYear || (date && date.getFullYear() === this.selectedYear);
-      const matchesClient = !this.selectedClient || imputation.client?.id === this.selectedClient;
-      const matchesLot = !this.selectedLot || imputation.lot?.id === this.selectedLot;
-      const matchesSoustraitant = !this.selectedSoustraitant || imputation.soustraitant?.id === this.selectedSoustraitant;
-  
-      return matchesMonth && matchesYear && matchesClient && matchesLot && matchesSoustraitant;
-    });
-  
-    console.log('Filtered Imputations:', this.filteredImputations);
   }
   
+  getTotalCostImputation(): number {
+    return this.filteredImputations.reduce(
+      (total, imputation) => total + (imputation.costImputation || 0),
+      0
+    );
+  }
   
 }
