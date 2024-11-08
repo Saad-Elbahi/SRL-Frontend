@@ -47,6 +47,18 @@
             </ng-select>
           </fieldset>
         </div>
+       <!--  <div class="col-12 col-md-3" *ngIf="soustraitants && soustraitants.length > 0">
+          <fieldset class="form-group">
+            <ng-select
+              [items]="soustraitants"
+              bindLabel="name"
+              bindValue="id"
+              placeholder="Select Soustraitant"
+              [(ngModel)]="selectedSoustraitant"
+              (change)="filterData()">
+            </ng-select>
+          </fieldset>
+        </div> -->
       </div>
     </div>
 

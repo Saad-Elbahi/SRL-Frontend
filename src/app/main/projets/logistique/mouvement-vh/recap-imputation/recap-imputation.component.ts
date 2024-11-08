@@ -123,13 +123,19 @@ export class RecapImputationComponent implements OnInit {
     );
   }
 
-/*   onAffaireChange(): void {
-    if (this.selectedAffaire) {
-      this.getSoustraitants(this.selectedAffaire.id);
-    } else {
-      this.soustraitants = []; // Clear soustraitants if no affaire selected
-    }
-    this.filterData();
+/*   onAffaireChanged(affaire: Affaire): void {
+    this.soustraitants = [];
+    this.filterAffaire = affaire.code; 
+
+    this.vehiculeRouteService
+      .getSoustraitants(affaire.id)
+      .then((data: Soustraitant[]) => {
+        this.soustraitants = data;
+        this.selectedSoustraitant = null; 
+      })
+      .catch((error) => console.error("Error loading soustraitants:", error));
+    
+    this.filterData(); 
   } */
 
   getSoustraitants(projectId: number): void {
@@ -153,14 +159,14 @@ export class RecapImputationComponent implements OnInit {
       const affaireMatch = this.filterAffaire ? item.affaireCode === this.filterAffaire : true;
       const clientMatch=this.filterClient ? item.client.name === this.filterClient:true;
       const LottMatch=this.filterLot ? item.lot.name === this.filterLot:true;
+      const soustraitantMatch = this.selectedSoustraitant ? item.soustraitant === this.selectedSoustraitant : true;
 
 
-      // Check date, month, and year filters
       const dateMatch = this.filterDate ? itemDate.toISOString().split('T')[0] === this.filterDate : true;
       const monthMatch = this.filterMonth ? itemMonth === this.filterMonth : true;
       const yearMatch = this.filterYear ? itemYear === this.filterYear : true;
 
-      return dateMatch && monthMatch && yearMatch && affaireMatch && clientMatch && LottMatch;
+      return dateMatch && monthMatch && yearMatch && affaireMatch && clientMatch && LottMatch && soustraitantMatch;
     });
   }
   
