@@ -9,7 +9,7 @@ import {
   ViewEncapsulation,
 } from "@angular/core";
 import Swal from "sweetalert2";
-import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { NgbDateStruct, NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { ToastrService } from "ngx-toastr";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
@@ -83,7 +83,7 @@ export class VehiculeMouvementListComponent implements OnInit {
   //-------------------------------------------------------
   vehiculeRoutes: VehiculeRoute[] = [];
   filteredRoutes: VehiculeRoute[] = [];
-  fromMouvements: FromMouvement[] = [];
+  fromMouvements: FromMouvementResponseDTO[] = [];
   affaires: Affaire[] = [];
   fournisseurs: Fournisseur[] = [];
   toAffaireId: number | null = null;
@@ -116,17 +116,17 @@ export class VehiculeMouvementListComponent implements OnInit {
   };
   fromMouvementResponseDTO: FromMouvementResponseDTO = {
     id: 0,
-    vehiculeRouteId: 0,
-    affaireId: 0,
+    vehiculeRouteId: null,
+    affaireId: null,
     affaireCode: "",
-    fournisseurId: 0,
+    fournisseurId: null,
     fournisseurName: "",
     bl: "",
     blMontant: 0,
     dateBl: new Date(),
   };
 
-  currentFromMouvement: FromMouvementRequestDTO;
+  currentFromMouvement: FromMouvementResponseDTO;
   isFournisseurDisabled: boolean = false;
   isAffaireDisabled: boolean = false;
 
@@ -135,6 +135,8 @@ export class VehiculeMouvementListComponent implements OnInit {
   @ViewChild("addFromMouvementModal") addFromMouvementModal: TemplateRef<any>;
   @ViewChild("editeFromMouvementModal")
   editeFromMouvementModal: TemplateRef<any>;
+
+  ngbDateBl: NgbDateStruct;
 
   constructor(
     private vehiculeRouteService: VehiculeRouteService,
@@ -154,6 +156,13 @@ export class VehiculeMouvementListComponent implements OnInit {
     this.filterData();
     this.fetchClients();
     this.fetchLots();
+
+    /* 'I am learning Web Dev'
+             .split(' ')
+             .map(s=>
+                 s[0].toUpperCase()
+                 + s.slice(1).toLowerCase())
+             .join(' ')*/
 
     this.vehiculeRouteService.onImputationsChanged
       .pipe(takeUntil(this._unsubscribeAll))
@@ -219,11 +228,10 @@ export class VehiculeMouvementListComponent implements OnInit {
       .pipe(takeUntil(this._unsubscribeAll))
       .subscribe(
         (routes) => {
-          // Check if routes is an array and map it to include isEditing property
           this.vehiculeRoutes = Array.isArray(routes)
             ? routes.map((route) => ({
                 ...route,
-                isEditing: false, // Initialize editing state
+                isEditing: false, 
               }))
             : [];
           this.filteredRoutes = this.vehiculeRoutes;
@@ -257,7 +265,8 @@ export class VehiculeMouvementListComponent implements OnInit {
       }
     );
   }
-  openModalFromTo(associationModal: any, vehiculeRoute: VehiculeRoute) {
+
+  openModalFromTo(modalFromTo: any, vehiculeRoute: VehiculeRoute) {
     this.selectedVehiculeRoute = vehiculeRoute;
     this.vehiculeRouteId = vehiculeRoute?.id;
 
@@ -265,67 +274,79 @@ export class VehiculeMouvementListComponent implements OnInit {
       console.error("Vehicule Route ID is missing, cannot open modal.");
       return;
     }
-
-    Promise.all([this.loadAffaires(), this.loadFournisseurs()])
-      .then(() => {
-        if (!this.affaires || this.affaires.length === 0) {
-          console.warn("Affaires not loaded correctly.");
-        }
-        if (!this.fournisseurs || this.fournisseurs.length === 0) {
-          console.warn("Fournisseurs not loaded correctly.");
-        }
-
-        return this.vehiculeRouteService.getFromMouvementByVehiculeRouteId(
-          this.vehiculeRouteId
-        );
-      })
-      .then((fromMouvements: FromMouvementRequestDTO[]) => {
-        this.fromMouvements = fromMouvements.map((fromMouvement) => {
-          const correspondingAffaire = this.affaires.find(
-            (affaire) => affaire.id === fromMouvement.affaireId
-          ) || { id: null, code: fromMouvement.affaireCode || "-" };
-
-          const correspondingFournisseur = this.fournisseurs.find(
-            (fournisseur) => fournisseur.id === fromMouvement.fournisseurId
-          ) || {
-            id: null,
-            intituleFournisseur: fromMouvement.fournisseurName || "-",
-          };
-
-          return new FromMouvement({
-            id: fromMouvement.id,
-            affaire: correspondingAffaire,
-            fournisseur: correspondingFournisseur,
-            bl: fromMouvement.bl,
-            blMontant: fromMouvement.blMontant,
-            dateBl: fromMouvement.dateBl,
-          });
-        });
-
-        console.log(
-          "Final fromMouvements to display in modal:",
-          this.fromMouvements
-        );
-
-        this.modalService.open(associationModal, {
-          size: "xl",
-          centered: true,
-        });
-      })
-      .catch((error) => {
-        console.error("Error fetching FromMouvement data:", error);
-      });
+    this.vehiculeRouteService.getFromMouvementByVehiculeRouteId(
+      this.vehiculeRouteId
+    );
+    this.modalService.open(modalFromTo, { size: "xl", centered: true });
   }
 
+  /*openModalFromTo(modalFromTo: any, vehiculeRoute: VehiculeRoute) {
+        this.selectedVehiculeRoute = vehiculeRoute;
+        this.vehiculeRouteId = vehiculeRoute?.id;
+
+        if (!this.vehiculeRouteId) {
+            console.error("Vehicule Route ID is missing, cannot open modal.");
+            return;
+        }
+
+        Promise.all([this.loadAffaires(), this.loadFournisseurs()])
+            .then(() => {
+                if (!this.affaires || this.affaires.length === 0) {
+                    console.warn("Affaires not loaded correctly.");
+                }
+                if (!this.fournisseurs || this.fournisseurs.length === 0) {
+                    console.warn("Fournisseurs not loaded correctly.");
+                }
+
+                return this.vehiculeRouteService.getFromMouvementByVehiculeRouteId(this.vehiculeRouteId);
+            })
+            .then((fromMouvements: FromMouvementRequestDTO[]) => {
+                this.fromMouvements = fromMouvements.map((fromMouvement) => {
+                    const correspondingAffaire = this.affaires.find(
+                        (affaire) => affaire.id === fromMouvement.affaireId
+                    ) || {id: null, code: fromMouvement.affaireCode || "-"};
+
+                    const correspondingFournisseur = this.fournisseurs.find(
+                        (fournisseur) => fournisseur.id === fromMouvement.fournisseurId
+                    ) || {
+                        id: null,
+                        intituleFournisseur: fromMouvement.fournisseurName || "-",
+                    };
+
+                    return new FromMouvement({
+                        id: fromMouvement.id,
+                        affaire: correspondingAffaire,
+                        fournisseur: correspondingFournisseur,
+                        bl: fromMouvement.bl,
+                        blMontant: fromMouvement.blMontant,
+                        dateBl: fromMouvement.dateBl,
+                    });
+                });
+
+                console.log(
+                    "Final fromMouvements to display in modal:",
+                    this.fromMouvements
+                );
+
+                this.modalService.open(associationModal, {
+                    size: "xl",
+                    centered: true,
+                });
+            })
+            .catch((error) => {
+                console.error("Error fetching FromMouvement data:", error);
+            });
+    }
+*/
   closeModal(): void {
     this.modalService.dismissAll();
   }
 
   removeFromMouvement(fromMouvement: FromMouvement): void {
     console.log("Bouton de suppression cliqué pour :", fromMouvement);
-  
+
     const isNew = !fromMouvement.id;
-  
+
     Swal.fire({
       title: "Êtes-vous sûr ?",
       text: isNew
@@ -359,7 +380,10 @@ export class VehiculeMouvementListComponent implements OnInit {
                 );
               },
               error: (error) => {
-                console.error("Erreur lors de la suppression du mouvement :", error);
+                console.error(
+                  "Erreur lors de la suppression du mouvement :",
+                  error
+                );
                 Swal.fire(
                   "Erreur !",
                   "Un problème est survenu lors de la suppression du mouvement.",
@@ -371,7 +395,6 @@ export class VehiculeMouvementListComponent implements OnInit {
       }
     });
   }
-  
 
   onAffaireChange(): void {
     if (this.currentFromMouvement.affaireId) {
@@ -381,6 +404,7 @@ export class VehiculeMouvementListComponent implements OnInit {
       this.currentFromMouvement.fournisseurId = null;
     }
   }
+
   // Method to reset the FromMouvement data
   resetFromMouvement() {
     this.currentFromMouvement = new FromMouvementRequestDTO(
@@ -397,6 +421,7 @@ export class VehiculeMouvementListComponent implements OnInit {
     this.isAffaireDisabled = false;
     this.isFournisseurDisabled = false;
   }
+
   onFournisseurChange(): void {
     if (this.currentFromMouvement.fournisseurId) {
       this.isAffaireDisabled = true;
@@ -422,12 +447,43 @@ export class VehiculeMouvementListComponent implements OnInit {
       );
       return;
     }
-  
-    if (!this.currentFromMouvement || this.currentFromMouvement.blMontant < 0) {
-      Swal.fire("Erreur", "Données invalides. Veuillez vérifier vos entrées.", "error");
+
+    if (
+      !this.currentFromMouvement ||
+      this.currentFromMouvement.blMontant === undefined ||
+      this.currentFromMouvement.blMontant < 0 ||
+      !this.currentFromMouvement.bl ||
+      !this.currentFromMouvement.dateBl
+    ) {
+      Swal.fire(
+        "Erreur",
+        "Données invalides. Veuillez vérifier vos entrées.",
+        "error"
+      );
       return;
     }
-  
+
+    const selectedAffaire = this.currentFromMouvement.affaire;
+    const selectedFournisseur = this.currentFromMouvement.fournisseur;
+
+    if (selectedAffaire && selectedFournisseur) {
+      Swal.fire(
+        "Erreur de Sélection",
+        "Vous ne pouvez pas sélectionner à la fois une Affaire et un Fournisseur. Veuillez choisir uniquement l'un des deux.",
+        "error"
+      );
+      return;
+    }
+
+    if (!selectedAffaire && !selectedFournisseur) {
+      Swal.fire(
+        "Erreur de Sélection",
+        "Veuillez sélectionner soit une Affaire soit un Fournisseur avant de sauvegarder.",
+        "error"
+      );
+      return;
+    }
+
     Swal.fire({
       title: "Êtes-vous sûr ?",
       text: "Vous êtes sur le point de sauvegarder le Mouvement d'origine.",
@@ -438,35 +494,24 @@ export class VehiculeMouvementListComponent implements OnInit {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const selectedAffaire = this.affaires.find(
-            (f) => f.id === this.currentFromMouvement.affaireId
-          );
-          this.currentFromMouvement.affaireCode = selectedAffaire
-            ? selectedAffaire.code
-            : "";
-          const selectedFournisseur = this.fournisseurs.find(
-            (f) => f.id === this.currentFromMouvement.fournisseurId
-          );
-          this.currentFromMouvement.fournisseurName = selectedFournisseur
-            ? selectedFournisseur.intituleFournisseur
-            : "";
-  
           const fromMouvementRequestDTO = new FromMouvementRequestDTO(
             this.currentFromMouvement.id,
             this.selectedVehiculeRoute.id,
-            this.currentFromMouvement.affaireId || null,
-            this.currentFromMouvement.affaireCode || "",
-            this.currentFromMouvement.fournisseurId || null,
-            this.currentFromMouvement.fournisseurName || "",
+            selectedAffaire ? selectedAffaire.id : null,
+            selectedAffaire ? selectedAffaire.code : null,
+            selectedFournisseur ? selectedFournisseur.id : null,
+            selectedFournisseur
+              ? selectedFournisseur.intituleFournisseur
+              : null,
             this.currentFromMouvement.bl,
             this.currentFromMouvement.blMontant,
             new Date(this.currentFromMouvement.dateBl)
           );
-  
+
           await this.vehiculeRouteService.saveFromMouvement(
             fromMouvementRequestDTO
           );
-  
+
           Swal.fire(
             "Succès",
             "Mouvement d'origine sauvegardé avec succès.",
@@ -475,54 +520,85 @@ export class VehiculeMouvementListComponent implements OnInit {
             modal.close();
             this.refreshFromMouvements();
           });
-        } catch (error) {
-          Swal.fire(
-            "Erreur",
-            "Une erreur est survenue lors de la sauvegarde du Mouvement d'origine.",
-            "error"
+        } catch (error: any) {
+          if (error.status === 400) {
+            Swal.fire(
+              "Erreur de Validation",
+              "Les données saisies sont invalides. Veuillez vérifier et réessayer.",
+              "error"
+            );
+          } else if (error.status === 404) {
+            Swal.fire(
+              "Erreur",
+              "La Route de Véhicule ou une autre ressource liée n'a pas été trouvée.",
+              "error"
+            );
+          } else if (error.status === 500) {
+            Swal.fire(
+              "Erreur Interne",
+              "Une erreur interne s'est produite. Veuillez réessayer plus tard.",
+              "error"
+            );
+          } else {
+            Swal.fire(
+              "Erreur Inconnue",
+              "Une erreur inattendue est survenue : " + error.message,
+              "error"
+            );
+          }
+
+          console.error(
+            "Erreur lors de la sauvegarde du Mouvement d'origine :",
+            error
           );
-          console.error("Erreur :", error);
         }
       }
     });
   }
-  
 
   refreshFromMouvements() {
-    this.vehiculeRouteService
-      .getFromMouvementByVehiculeRouteId(this.vehiculeRouteId)
-      .then((fromMouvements: FromMouvementResponseDTO[]) => {
-        this.fromMouvements = fromMouvements.map((fromMouvement) => {
-          const correspondingAffaire = this.affaires.find(
-            (affaire) => affaire.id === fromMouvement.affaireId
-          ) || { id: null, code: fromMouvement.affaireCode || "-" };
+    this.vehiculeRouteService.getFromMouvementByVehiculeRouteId(
+      this.vehiculeRouteId
+    );
 
-          const correspondingFournisseur = this.fournisseurs.find(
-            (fournisseur) => fournisseur.id === fromMouvement.fournisseurId
-          ) || {
-            id: null,
-            intituleFournisseur: fromMouvement.fournisseurName || "-",
-          };
+    /* this.vehiculeRouteService.getFromMouvementByVehiculeRouteId(this.vehiculeRouteId)
+             .then((fromMouvements: FromMouvementResponseDTO[]) => {
+                 this.fromMouvements = fromMouvements.map((fromMouvement) => {
+                     const correspondingAffaire = this.affaires.find(
+                         (affaire) => affaire.id === fromMouvement.affaireId
+                     ) || {id: null, code: fromMouvement.affaireCode || "-"};
 
-          return new FromMouvement({
-            id: fromMouvement.id,
-            affaire: correspondingAffaire,
-            fournisseur: correspondingFournisseur,
-            bl: fromMouvement.bl,
-            blMontant: fromMouvement.blMontant,
-            dateBl: fromMouvement.dateBl,
-          });
-        });
-      })
-      .catch((error) =>
-        console.error("Error refreshing FromMouvement data:", error)
-      );
+                     const correspondingFournisseur = this.fournisseurs.find(
+                         (fournisseur) => fournisseur.id === fromMouvement.fournisseurId
+                     ) || {
+                         id: null,
+                         intituleFournisseur: fromMouvement.fournisseurName || "-",
+                     };
+
+                     return new FromMouvement({
+                         id: fromMouvement.id,
+                         affaire: correspondingAffaire,
+                         fournisseur: correspondingFournisseur,
+                         bl: fromMouvement.bl,
+                         blMontant: fromMouvement.blMontant,
+                         dateBl: fromMouvement.dateBl,
+                     });
+                 });
+             })
+             .catch((error) =>
+                 console.error("Error refreshing FromMouvement data:", error)
+             );*/
   }
 
   openEditFromMouvementModal(fromMouvement: FromMouvementResponseDTO) {
     this.fromMouvementResponseDTO = fromMouvement;
-
- /*    this.fromMouvementResponseDTO.affaire = {
+    console.log(fromMouvement);
+    this.ngbDateBl = {
+      day: new Date(this.fromMouvementResponseDTO?.dateBl).getDate(),
+      month: new Date(this.fromMouvementResponseDTO?.dateBl).getMonth() + 1,
+      year: new Date(this.fromMouvementResponseDTO?.dateBl).getFullYear(),
+    };
+    this.fromMouvementResponseDTO.affaire = {
       id: fromMouvement.affaireId,
       code: fromMouvement.affaireCode,
       intitule: fromMouvement.affaireCode,
@@ -541,7 +617,9 @@ export class VehiculeMouvementListComponent implements OnInit {
       email: "",
       telephone: "",
       contact: "",
-    }; */
+    };
+
+    console.log(this.fromMouvementResponseDTO);
 
     // Open the modal
     this.modalService.open(this.editeFromMouvementModal, {
@@ -559,7 +637,6 @@ export class VehiculeMouvementListComponent implements OnInit {
     const selectedFournisseurId = this.fromMouvementResponseDTO.fournisseurId;
     console.log("Selected Fournisseur ID:", selectedFournisseurId);
   }
-
   async updateFromMouvement(modal: any) {
     if (!this.vehiculeRouteId) {
       Swal.fire(
@@ -569,52 +646,131 @@ export class VehiculeMouvementListComponent implements OnInit {
       );
       return;
     }
-  
+
+    console.log("Affaire:", this.fromMouvementResponseDTO.affaire);
+    console.log("Fournisseur:", this.fromMouvementResponseDTO.fournisseur);
+
+    const selectedAffaire = this.fromMouvementResponseDTO.affaire;
+    const selectedFournisseur = this.fromMouvementResponseDTO.fournisseur;
+
+    if (selectedAffaire && selectedFournisseur) {
+      Swal.fire(
+        "Erreur de Sélection",
+        "Vous ne pouvez pas sélectionner à la fois une Affaire et un Fournisseur. Veuillez choisir uniquement l'un des deux.",
+        "error"
+      );
+      return;
+    }
+
+    if (!selectedAffaire && !selectedFournisseur) {
+      Swal.fire(
+        "Erreur de Sélection",
+        "Veuillez sélectionner soit une Affaire soit un Fournisseur avant de sauvegarder.",
+        "error"
+      );
+      return;
+    }
+
+    // Check for invalid form data
+    const { bl, blMontant, dateBl } = this.fromMouvementResponseDTO;
+
+    if (!bl || bl.trim() === "") {
+      Swal.fire(
+        "Erreur",
+        "Le champ BL est obligatoire et ne peut pas être vide.",
+        "error"
+      );
+      return;
+    }
+
+    if (blMontant == null || blMontant < 0) {
+      Swal.fire(
+        "Erreur",
+        "Le montant BL doit être un nombre positif.",
+        "error"
+      );
+      return;
+    }
+
+    if (!dateBl || isNaN(new Date(dateBl).getTime())) {
+      Swal.fire("Erreur", "La date BL est invalide ou manquante.", "error");
+      return;
+    }
+
+    // Create FromMouvementRequestDTO object
     const fromMouvement: FromMouvementRequestDTO = {
       id: this.fromMouvementResponseDTO.id,
       vehiculeRouteId: this.vehiculeRouteId,
-      affaireId: this.fromMouvementResponseDTO.affaireId,
-      affaireCode: this.fromMouvementResponseDTO.affaireCode || "",
-      fournisseurId: this.fromMouvementResponseDTO.fournisseurId || null,
-      fournisseurName: this.fromMouvementResponseDTO.fournisseurName || "",
-      bl: this.fromMouvementResponseDTO.bl || "",
-      blMontant: this.fromMouvementResponseDTO.blMontant,
-      dateBl: this.fromMouvementResponseDTO.dateBl,
+      affaireId: selectedAffaire ? selectedAffaire.id : null,
+      affaireCode: selectedAffaire ? selectedAffaire.code : null,
+      fournisseurId: selectedFournisseur ? selectedFournisseur.id : null,
+      fournisseurName: selectedFournisseur
+        ? selectedFournisseur.intituleFournisseur
+        : null,
+      bl: bl.trim(),
+      blMontant: blMontant,
+      dateBl: dateBl,
     };
-  
+
     console.log("Mise à jour du Mouvement d'origine avec :", fromMouvement);
-  
+
     try {
       if (this.fromMouvementResponseDTO.id) {
         await this.vehiculeRouteService.updateFrom(fromMouvement);
-        Swal.fire("Succès", "Mouvement d'origine mis à jour avec succès.", "success");
-  
+        Swal.fire(
+          "Succès",
+          "Mouvement d'origine mis à jour avec succès.",
+          "success"
+        );
         this.refreshFromMouvements();
       }
       modal.close("Clic accepté");
-    } catch (error) {
-      Swal.fire(
-        "Erreur",
-        "Une erreur est survenue lors de la sauvegarde du Mouvement d'origine.",
-        "error"
+    } catch (error: any) {
+      if (error.status === 400) {
+        Swal.fire(
+          "Erreur de Validation",
+          "Les données saisies sont invalides. Veuillez vérifier et réessayer.",
+          "error"
+        );
+      } else if (error.status === 404) {
+        Swal.fire(
+          "Erreur",
+          "La Route de Véhicule ou une autre ressource liée n'a pas été trouvée.",
+          "error"
+        );
+      } else if (error.status === 500) {
+        Swal.fire(
+          "Erreur Interne",
+          "Une erreur interne s'est produite. Veuillez réessayer plus tard.",
+          "error"
+        );
+      } else {
+        Swal.fire(
+          "Erreur Inconnue",
+          "Une erreur inattendue est survenue : " + error.message,
+          "error"
+        );
+      }
+
+      console.error(
+        "Erreur lors de la mise à jour du Mouvement d'origine :",
+        error
       );
-      console.error("Erreur lors de la sauvegarde du Mouvement d'origine :", error);
     }
   }
-  
-  
+
   //new Structure Imputation ----02/11/2024-----------------------------------------------------------------------------------
 
   /*  async getImputations(vehiculeRouteId: number, content: any) {
-          try {
-              const data =
-                  await this.vehiculeRouteService.getImputationByVehiculeRouteId(vehiculeRouteId);
-              this.imputations = data as TripImputationRequestDTO[];
-              this.modalService.open(content, {size: "xl", centered: true});
-          } catch (error) {
-              console.error("Error fetching imputations:", error);
-          }
-      }*/
+            try {
+                const data =
+                    await this.vehiculeRouteService.getImputationByVehiculeRouteId(vehiculeRouteId);
+                this.imputations = data as TripImputationRequestDTO[];
+                this.modalService.open(content, {size: "xl", centered: true});
+            } catch (error) {
+                console.error("Error fetching imputations:", error);
+            }
+        }*/
 
   openModalsViewImputations(
     modalImputations: any,
@@ -627,38 +783,6 @@ export class VehiculeMouvementListComponent implements OnInit {
       console.error("Vehicule Route ID is missing, cannot open modal.");
       return;
     }
-
-    /*this.vehiculeRouteService.onImputationsChanged.pipe(takeUntil(this._unsubscribeAll)).subscribe(
-            (imputations) => {
-                if (Array.isArray(imputations)) {
-                    this.imputations = imputations.map((imputation) =>
-                        new TripImputationDTO(
-                            imputation.id || null,
-                            imputation.affaireId,
-                            imputation.affaireCode,
-                            imputation.fillingPercentage || 0,
-                            imputation.observation || "",
-                            imputation.client ? imputation.client.id : null, // Ensure client mapping
-                            imputation.lot ? imputation.lot.id : null, // Ensure lot mapping
-                            imputation.subContractorId,
-                            imputation.subContractorFullName,
-                            imputation.costImputation || 0
-                        )
-                    );
-                    this.modalService.open(modalImputations, {size: "xl", centered: true});
-                } else {
-                    console.warn("Imputations data is not an array:", imputations);
-                    this.imputations = [];
-                }
-            },  (error) => {
-                console.error("Error fetching imputations:", error);
-                Swal.fire({
-                    icon: "error",
-                    title: "Error Fetching Imputations",
-                    text: "Could not retrieve imputations for the selected route.",
-                });
-            }
-        )*/
     this.vehiculeRouteService.imputationByVehiculeRoute(this.vehiculeRouteId);
     this.modalService.open(modalImputations, { size: "xl", centered: true });
   }
@@ -731,80 +855,96 @@ export class VehiculeMouvementListComponent implements OnInit {
 
   //save Imputation Modal
   async saveImputation(modal: any) {
-    // Check if the vehiculeRouteId is present
     if (!this.vehiculeRouteId) {
       Swal.fire({
         icon: "error",
-        title: "Vehicule Route ID Missing",
-        text: "Please select a Vehicule Route before saving.",
+        title: "Erreur",
+        text: "Veuillez sélectionner une Route de Véhicule avant de sauvegarder.",
       });
       return;
     }
 
-    // Check if the imputation is present
     if (!this.tripImputationResponseDTO) {
       Swal.fire({
         icon: "error",
-        title: "Imputation Missing",
-        text: "Please add an imputation before saving.",
+        title: "Erreur",
+        text: "Veuillez ajouter une imputation avant de sauvegarder.",
       });
       return;
     }
 
-    // Check if fillingPercentage is valid
-    if (this.tripImputationResponseDTO.fillingPercentage > 100) {
+    const { fillingPercentage } = this.tripImputationResponseDTO;
+    if (
+      fillingPercentage == null ||
+      fillingPercentage < 0 ||
+      fillingPercentage > 100
+    ) {
       Swal.fire({
         icon: "error",
-        title: "Filling Percentage Exceeded",
-        text: "Filling percentage cannot exceed 100%.",
+        title: "Erreur",
+        text: "Le pourcentage de remplissage doit être compris entre 0 et 100.",
+      });
+      return;
+    }
+
+    if (!this.tripImputationResponseDTO.affaire) {
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: "L'affaire est obligatoire.",
+      });
+      return;
+    }
+    if (!this.tripImputationResponseDTO.client) {
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: "Le client est obligatoire.",
       });
       return;
     }
 
     Swal.fire({
-      title: "Are you sure?",
-      text: "You are about to save the imputation.",
+      title: "Êtes-vous sûr?",
+      text: "Vous êtes sur le point de sauvegarder l'imputation.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, save it!",
-      cancelButtonText: "No, cancel!",
+      confirmButtonText: "Oui, sauvegarder!",
+      cancelButtonText: "Non, annuler!",
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
           const tripImputationRequestDTO: TripImputationRequestDTO = {
             id: this.tripImputationResponseDTO.id,
-            affaireId: this.tripImputationResponseDTO.affaireId,
-            affaireCode: this.tripImputationResponseDTO.affaireCode || "",
+            affaireId: this.tripImputationResponseDTO.affaire?.id,
+            affaireCode: this.tripImputationResponseDTO.affaire?.code || "",
             vehiculeRouteId: this.vehiculeRouteId,
             fillingPercentage: this.tripImputationResponseDTO.fillingPercentage,
-            observation: this.tripImputationResponseDTO.observation,
+            observation: this.tripImputationResponseDTO.observation || "",
             clientId: this.tripImputationResponseDTO.client?.id,
             lotId: this.tripImputationResponseDTO.lot?.id,
-            subContractorId: this.tripImputationResponseDTO.subContractorId,
+            subContractorId: this.tripImputationResponseDTO.soustraitant?.id,
             subContractorFullName:
-              this.tripImputationResponseDTO.affaireCode || "",
+              this.tripImputationResponseDTO.soustraitant?.fullName || "",
             costImputation: this.tripImputationResponseDTO.costImputation,
           };
 
-          // Call the service to save the imputation
           await this.vehiculeRouteService.saveImputation(
             tripImputationRequestDTO
           );
 
-          // Show success message
           Swal.fire(
-            "Success!",
-            "Imputation saved successfully.",
+            "Succès!",
+            "Imputation enregistrée avec succès.",
             "success"
-          ).then(async () => {
-            // Close the modal
+          ).then(() => {
             modal.close("Accept click");
           });
         } catch (error) {
           Swal.fire({
             icon: "error",
-            title: "Error",
-            text: "There was an error saving the imputation.",
+            title: "Erreur",
+            text: "Une erreur s'est produite lors de la sauvegarde de l'imputation.",
           });
           console.error("Error saving the imputation:", error);
         }
@@ -871,40 +1011,98 @@ export class VehiculeMouvementListComponent implements OnInit {
 
   async updateImputation(modal: any) {
     if (!this.vehiculeRouteId) {
-      Swal.fire(
-        "Error",
-        "Please select a Vehicule Route before saving.",
-        "error"
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: "Veuillez sélectionner une Route de Véhicule avant de mettre à jour.",
+      });
       return;
     }
 
-    var imputation: TripImputationRequestDTO = {
-      id: this.tripImputationResponseDTO.id,
-      affaireId: this.tripImputationResponseDTO.affaireId,
-      affaireCode: this.tripImputationResponseDTO.affaireCode || "",
-      vehiculeRouteId: this.vehiculeRouteId,
-      fillingPercentage: this.tripImputationResponseDTO.fillingPercentage,
-      observation: this.tripImputationResponseDTO.observation,
-      clientId: this.tripImputationResponseDTO.client?.id,
-      lotId: this.tripImputationResponseDTO.lot?.id,
-      subContractorId: this.tripImputationResponseDTO.subContractorId,
-      subContractorFullName: this.tripImputationResponseDTO.affaireCode || "",
-      costImputation: this.tripImputationResponseDTO.costImputation,
-    };
-
-    try {
-      if (this.tripImputationResponseDTO.id) {
-        // Update existing imputation
-        await this.vehiculeRouteService.updateImputation(imputation);
-        Swal.fire("Success", "Imputation updated successfully.", "success");
-      }
-      // Refresh the imputations list and close the modal
-      modal.close("Accept click");
-    } catch (error) {
-      Swal.fire("Error", "There was an error saving the imputation.", "error");
-      console.error("Error saving the imputation:", error);
+    if (!this.tripImputationResponseDTO) {
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: "Veuillez ajouter une imputation avant de mettre à jour.",
+      });
+      return;
     }
+
+    const { fillingPercentage } = this.tripImputationResponseDTO;
+    if (
+      fillingPercentage == null ||
+      fillingPercentage < 0 ||
+      fillingPercentage > 100
+    ) {
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: "Le pourcentage de remplissage doit être compris entre 0 et 100.",
+      });
+      return;
+    }
+
+    if (!this.tripImputationResponseDTO.affaire) {
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: "L'affaire est obligatoire.",
+      });
+      return;
+    }
+    if (!this.tripImputationResponseDTO.client) {
+      Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: "Le client est obligatoire.",
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: "Êtes-vous sûr?",
+      text: "Vous êtes sur le point de mettre à jour l'imputation.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Oui, mettre à jour!",
+      cancelButtonText: "Non, annuler!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const imputation: TripImputationRequestDTO = {
+            id: this.tripImputationResponseDTO.id,
+            affaireId: this.tripImputationResponseDTO.affaire?.id,
+            affaireCode: this.tripImputationResponseDTO.affaire?.code || "",
+            vehiculeRouteId: this.vehiculeRouteId,
+            fillingPercentage: this.tripImputationResponseDTO.fillingPercentage,
+            observation: this.tripImputationResponseDTO.observation || "",
+            clientId: this.tripImputationResponseDTO.client?.id,
+            lotId: this.tripImputationResponseDTO.lot?.id,
+            subContractorId: this.tripImputationResponseDTO.soustraitant?.id,
+            subContractorFullName:
+              this.tripImputationResponseDTO.soustraitant?.fullName || "",
+            costImputation: this.tripImputationResponseDTO.costImputation,
+          };
+
+          await this.vehiculeRouteService.updateImputation(imputation);
+
+          Swal.fire(
+            "Succès!",
+            "Imputation mise à jour avec succès.",
+            "success"
+          );
+
+          modal.close("Accept click");
+        } catch (error) {
+          Swal.fire({
+            icon: "error",
+            title: "Erreur",
+            text: "Une erreur s'est produite lors de la mise à jour de l'imputation.",
+          });
+          console.error("Error updating the imputation:", error);
+        }
+      }
+    });
   }
 
   isFormValid(): boolean {
@@ -924,9 +1122,9 @@ export class VehiculeMouvementListComponent implements OnInit {
   }
 
   /* enableEdit(imputation: TripImputationDTO) {
-      this.isInputsDisabled = false;
-      this.currentImputation = imputation;
-  } */
+        this.isInputsDisabled = false;
+        this.currentImputation = imputation;
+    } */
   getAffaireCode(affaireId: number): string {
     const affaire = this.affaires.find((a) => a.id === affaireId);
     return affaire ? affaire.code : "Unknown";
@@ -964,17 +1162,28 @@ export class VehiculeMouvementListComponent implements OnInit {
       );
 
       this.vehiculeRouteService.updateFillingPercentage(dto).then(
-        (updatedRoute) => {
-          this.toastr.success("Filling percentage updated successfully!");
+        (updatedRoutes) => {
+          this.vehiculeRoutes = updatedRoutes;
+
+          this.filterData(this.filterType);
+
+          this.toastr.success(
+            "Le pourcentage de remplissage a été mis à jour avec succès !"
+          );
         },
         (error) => {
-          console.error("Error updating filling percentage", error);
-          this.toastr.error("Failed to update filling percentage.");
+          console.error(
+            "Erreur lors de la mise à jour du pourcentage de remplissage",
+            error
+          );
+          this.toastr.error(
+            "Échec de la mise à jour du pourcentage de remplissage."
+          );
         }
       );
     } else {
       this.toastr.warning(
-        "Please enter a valid filling percentage between 0 and 100."
+        "Veuillez entrer un pourcentage de remplissage valide entre 0 et 100."
       );
     }
   }
@@ -996,7 +1205,7 @@ export class VehiculeMouvementListComponent implements OnInit {
       if (result.isConfirmed) {
         const updateDto: UpdateMouvementDTO = {
           id: row.id,
-          routeLength: row.route_length,
+          routeLength: row.routeLength,
         };
 
         this.vehiculeRouteService
@@ -1008,7 +1217,6 @@ export class VehiculeMouvementListComponent implements OnInit {
               "Succès"
             );
 
-            this.loadRoutes();
             this.selectedRow.route_length = updateDto.routeLength;
             this.selectedRow = null;
 
@@ -1047,17 +1255,17 @@ export class VehiculeMouvementListComponent implements OnInit {
   //------------------------------------------------
 
   /*refreshData(): void {
-        // Method to refresh or reload the data
-        this.vehiculeRouteService.getAllVehiculeRoutes().then(
-          routes => {
-            this.rows = routes;
-          },
-          error => {
-            console.error('Error refreshing data', error);
-            this.toastr.error('Failed to refresh data.');
-          }
-        );
-      }*/
+          // Method to refresh or reload the data
+          this.vehiculeRouteService.getAllVehiculeRoutes().then(
+            routes => {
+              this.rows = routes;
+            },
+            error => {
+              console.error('Error refreshing data', error);
+              this.toastr.error('Failed to refresh data.');
+            }
+          );
+        }*/
   affaireSelected: Affaire;
   subContractorSelected: Soustraitant;
   mode: string = "display";
@@ -1083,10 +1291,10 @@ export class VehiculeMouvementListComponent implements OnInit {
       subContractor.fullName;
 
     /*const selectedSubContractor = this.soustraitants.find(sub => sub.id === subContractorId);
-        if (selectedSubContractor) {
-            this.newImputation.subContractorId = selectedSubContractor.id;
-            this.newImputation.subContractorFullName = selectedSubContractor.fullName;
-        }*/
+            if (selectedSubContractor) {
+                this.newImputation.subContractorId = selectedSubContractor.id;
+                this.newImputation.subContractorFullName = selectedSubContractor.fullName;
+            }*/
   }
 
   onFillingKeyUp() {
@@ -1095,4 +1303,16 @@ export class VehiculeMouvementListComponent implements OnInit {
         this.selectedVehiculeRoute.costPerTrip) /
       100;
   }
+
+  onDateBlChange(ngbDateStruct: NgbDateStruct) {
+    this.ngbDateBl = ngbDateStruct;
+    this.fromMouvementResponseDTO.dateBl = new Date(
+      this.ngbDateBl.year,
+      this.ngbDateBl.month - 1,
+      this.ngbDateBl.day
+    );
+    console.log(this.fromMouvementResponseDTO.dateBl);
+  }
+  //------------------status vehicule Route------------------------
+  
 }

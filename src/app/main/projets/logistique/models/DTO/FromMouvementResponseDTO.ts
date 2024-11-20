@@ -4,6 +4,7 @@ import { Fournisseur } from "../fournisseur";
 export class FromMouvementResponseDTO {
   public affaire?: Affaire ;
   public fournisseur?: Fournisseur ;
+
   constructor(
   public id: number , 
   public vehiculeRouteId: number, 

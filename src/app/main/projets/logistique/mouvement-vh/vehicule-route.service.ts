@@ -30,7 +30,7 @@ export class VehiculeRouteService {
   }
 
   getAllVehiculeRoutes(): Promise<any[]> {
-    let url = environment.vhrouteapi + "/getAllVehiculeRoutes";
+    let url = environment.vhrouteapi + "/statusVehiculeRoute";
 
     return new Promise((resolve, reject) => {
       this.srManagerService
@@ -163,7 +163,7 @@ export class VehiculeRouteService {
     });
   }
 
-  /*updateFillingPercentage(dto: UpdateFillingPercentageDTO): Promise<any> {
+  /* updateFillingPercentage(dto: UpdateFillingPercentageDTO): Promise<any> {
 
         console.log(dto.vehiculeRouteId)
         console.log(dto.fillingPercentage)
@@ -177,28 +177,30 @@ export class VehiculeRouteService {
                     resolve(response);
                 }, reject);
         });
-    }*/
+    } */
 
-  updateFillingPercentage(dto: UpdateFillingPercentageDTO): Promise<any> {
+   updateFillingPercentage(dto: UpdateFillingPercentageDTO): Promise<any> {
     let url = environment.vhrouteapi + "/updateFillingPercentage";
 
     return new Promise((resolve, reject) => {
       this.srManagerService
         .putRessource(url, dto)
-        .pipe(
-          map((routes: VehiculeRoute[]) =>
+         .pipe(
+           map((routes: VehiculeRoute[]) =>
             routes.sort(
               (a, b) =>
                 new Date(b.date!).getTime() - new Date(a.date!).getTime()
             )
-          )
-        )
+          ) 
+        ) 
         .subscribe((response: any[]) => {
           this.onMouvementsListChanged.next(response);
-          resolve(response);
+          resolve(response); 
         }, reject);
     });
-  }
+  }  
+  
+    
   updateMouvement(dto: UpdateMouvementDTO): Promise<any> {
     const url = environment.vhrouteapi + "/updateMouvement";
 
@@ -273,17 +275,16 @@ export class VehiculeRouteService {
     });
   }
   getFromMouvementByVehiculeRouteId(vehiculeRouteId: number) {
+    let url = `${environment.frommvtapi}/byVehiculeRoute/${vehiculeRouteId}`;
+
     return new Promise((resolve, reject) => {
-      const url = `${environment.frommvtapi}/byVehiculeRoute/${vehiculeRouteId}`;
-      this.srManagerService.getResource(url).subscribe(
-        (response) => {
-          resolve(response);
-        },
-        (error) => {
-          reject(error);
-        }
-      );
+      this.srManagerService.getResources(url).subscribe((response: any) => {
+        this.onFromMouvementChanged.next(response);
+        resolve(response);
+      }, reject);
     });
+
+
   }
 
   deleteFromMouvement(id: number): Observable<void> {
@@ -330,9 +331,7 @@ export class VehiculeRouteService {
     console.log("Request payload:", FromRequest);
 
     return new Promise((resolve, reject) => {
-      this.srManagerService
-        .postRessource(url, FromRequest)
-        .subscribe((response: any) => {
+      this.srManagerService.postRessource(url, FromRequest).subscribe((response: any) => {
           this.onFromMouvementChanged.next(response);
           resolve(response);
         }, reject);

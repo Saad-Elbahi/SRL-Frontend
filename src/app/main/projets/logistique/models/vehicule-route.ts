@@ -1,20 +1,20 @@
-import {FromMouvement} from "./FromMouvement";
-import {TripImputation} from "./TripImputation";
-import {VehiculeGpsLocation} from "./vehicule-gps-location";
+import { FromMouvement } from "./FromMouvement";
+import { TripImputation } from "./TripImputation";
+import { VehiculeGpsLocation } from "./vehicule-gps-location";
 
 export class VehiculeRoute {
   id?: number;
   date?: Date;
   routeLength?: number;
-  fromMouvements?: FromMouvement[]; 
+  fromMouvements?: FromMouvement[];
   costPerTrip?: number;
   vehiculeGpsLocation?: VehiculeGpsLocation;
-  imputations?: TripImputation[]; 
-  fillingPercentage?: number; 
-  fillingCost?: number; 
+  imputations?: TripImputation[];
+  fillingPercentage?: number;
+  fillingCost?: number;
+  status?: string;
   constructor(init?: Partial<VehiculeRoute>) {
     Object.assign(this, init);
   }
   isEditing?: boolean; // Add this line
 }
-

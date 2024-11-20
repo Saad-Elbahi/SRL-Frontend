@@ -20,6 +20,7 @@ export class TripImputationResponseDTO {
         public subContractorFullName: string,
         public costImputation: number,
         public vehiculeRoute?: VehiculeRoute ,
+        public  isValidated?: boolean,
 
     ) {}
 }

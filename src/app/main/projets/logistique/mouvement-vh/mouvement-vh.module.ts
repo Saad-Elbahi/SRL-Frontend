@@ -12,6 +12,7 @@ import {NgxDatatableModule} from "@swimlane/ngx-datatable";
 import {CoreCommonModule} from "../../../../../@core/common.module";
 import {NgbDropdownModule} from "@ng-bootstrap/ng-bootstrap";
 import { RecapImputationComponent } from './recap-imputation/recap-imputation.component';
+import {DatePickerI18nModule} from "../../../forms/form-elements/date-time-picker/date-picker-i18n/date-picker-i18n.module";
 
 const routes: Routes = [
   {path: "dashboardM", component: DashboardMouvementComponent,},
@@ -41,7 +42,8 @@ const routes: Routes = [
         NgSelectModule,
         NgxDatatableModule,
         CoreCommonModule,
-        NgbDropdownModule
+        NgbDropdownModule,
+        DatePickerI18nModule
     ]
 })
 export class MouvementVhModule { }

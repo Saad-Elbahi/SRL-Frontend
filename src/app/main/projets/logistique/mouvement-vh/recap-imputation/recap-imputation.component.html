@@ -1,137 +1,168 @@
 <div class="card">
-  <h5 class="card-header">Filter de Recherche</h5>
-  <div class="card-body">
-    <div class="users-list-filter">
-      <div class="row">
-        <!-- Year Filter -->
-        <div class="col-12 col-md-3">
-          <fieldset class="form-group">
-            <select class="form-control" [(ngModel)]="filterYear" name="filterYear" (change)="onYearSelect()">
-              <option value="">Select Year</option>
-              <option *ngFor="let year of years" [value]="year">{{ year }}</option>
-            </select>
-          </fieldset>
+    <h5 class="card-header">Filtre de Recherche</h5>
+    <div class="card-body">
+        <div class="users-list-filter">
+            <div class="row">
+                <!-- Year Filter -->
+                <div class="col-6 col-md-1">
+                  <!--  <fieldset class="form-group">
+                        <select class="form-control"
+                                [(ngModel)]="filterYear"
+                                name="filterYear"
+                                (change)="onYearSelect()">
+                            <option value="">Select Year</option>
+                            <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+                        </select>
+                    </fieldset>-->
+
+                    <fieldset class="form-group">
+                        <ng-select [items]="years"
+                                   [clearable]="false"
+                                   bindLabel="value"
+                                   bindValue="value"
+                                   placeholder="Séléctionner l'année"
+                                   [(ngModel)]="filterYear"
+                                   (change)="onYearSelect()">
+                        </ng-select>
+                    </fieldset>
+                </div>
+
+                <!-- Month Filter (only shown after year selection) -->
+                <div class="col-6 col-md-1" >
+
+                    <fieldset class="form-group">
+                        <ng-select [items]="months"
+                                   [clearable]="false"
+                                   bindLabel="name"
+                                   bindValue="value"
+                                   placeholder="Séléctionner le mois"
+                                   [(ngModel)]="filterMonth"
+                                   (change)="filterData()">
+                        </ng-select>
+                    </fieldset>
+
+                </div>
+
+                <!-- Affaire Filter -->
+                <div class="col-12 col-md-3">
+                    <fieldset class="form-group">
+                        <ng-select [items]="affaires"
+                                   bindLabel="code"
+                                   placeholder="Select Affaire"
+                                   [(ngModel)]="filterAffaire"
+                                   (change)="onAffaireChanged()">
+                        </ng-select>
+                    </fieldset>
+                </div>
+                <!-- Client Filter -->
+                <div class="col-6 col-md-2">
+                    <fieldset class="form-group">
+                        <ng-select [items]="clients"
+                                   bindLabel="name"
+                                   placeholder="Select Client"
+                                   [(ngModel)]="filterClient"
+                                   (change)="filterData()">
+                        </ng-select>
+                    </fieldset>
+                </div>
+                <!-- Client Filter -->
+                <div class="col-6 col-md-2">
+                    <fieldset class="form-group">
+                        <ng-select [items]="lots"
+                                   bindLabel="name"
+                                   placeholder="Select Lot"
+                                   [(ngModel)]="filterLot"
+                                   (change)="filterData()">
+                        </ng-select>
+                    </fieldset>
+                </div>
+                  <div class="col-12 col-md-3" *ngIf="soustraitants && soustraitants.length > 0">
+                   <fieldset class="form-group">
+                     <ng-select
+                       [items]="soustraitants"
+                       bindLabel="fullName"
+                       placeholder="Selectionner Soustraitant"
+                       [(ngModel)]="selectedSoustraitant"
+                       (change)="filterData()">
+                     </ng-select>
+                   </fieldset>
+                 </div>
+            </div>
         </div>
 
-        <!-- Month Filter (only shown after year selection) -->
-        <div class="col-12 col-md-3" *ngIf="isYearSelected">
-          <fieldset class="form-group">
-            <select class="form-control" [(ngModel)]="filterMonth" name="filterMonth" (change)="filterData()">
-              <option value="">Select Month</option>
-              <option *ngFor="let month of months" [value]="month.value">{{ month.name }}</option>
-            </select>
-          </fieldset>
-        </div>
 
-        <!-- Affaire Filter -->
-        <div class="col-12 col-md-3">
-          <fieldset class="form-group">
-            <ng-select [items]="affaires" bindLabel="code" bindValue="code" placeholder="Select Affaire"
-              [(ngModel)]="filterAffaire" (change)="filterData()">
-            </ng-select>
-          </fieldset>
-        </div>
-        <!-- Client Filter -->
-        <div class="col-12 col-md-3">
-          <fieldset class="form-group">
-            <ng-select [items]="clients" bindLabel="name" bindValue="name" placeholder="Select Client"
-              [(ngModel)]="filterClient" (change)="filterData()">
-            </ng-select>
-          </fieldset>
-        </div>
-        <!-- Client Filter -->
-        <div class="col-12 col-md-3">
-          <fieldset class="form-group">
-            <ng-select [items]="lots" bindLabel="name" bindValue="name" placeholder="Select Lot"
-              [(ngModel)]="filterLot" (change)="filterData()">
-            </ng-select>
-          </fieldset>
-        </div>
-       <!--  <div class="col-12 col-md-3" *ngIf="soustraitants && soustraitants.length > 0">
-          <fieldset class="form-group">
-            <ng-select
-              [items]="soustraitants"
-              bindLabel="name"
-              bindValue="id"
-              placeholder="Select Soustraitant"
-              [(ngModel)]="selectedSoustraitant"
-              (change)="filterData()">
-            </ng-select>
-          </fieldset>
-        </div> -->
-      </div>
+            <div class="sticky-bottom-right" style="width:200px;align-content: center">
+
+                <div class="total-cost"
+                     style="background-color: #e2f0d9;
+                     border-radius: 5px;
+                     padding: 10px;
+                     font-weight: bold;
+                     padding-left: 18px;">
+                    <span style="color: #28a745;">Total Cost:</span>
+                    <span style="color: #333;">{{ getTotalCostImputation() | number:'1.2-2' }} </span>
+                </div>
+            </div>
+
     </div>
-
-
-    <div class="modal-header" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6; padding: 1rem;">
-      <div class="d-flex justify-content-between align-items-center w-150">
-
-        <div class="total-cost"
-          style="background-color: #e2f0d9; border-radius: 5px; padding: 10px; font-weight: bold;">
-          <span style="color: #28a745;">Total Cost:</span>
-          <span style="color: #333;">{{ getTotalCostImputation() | number:'1.2-2' }} MAD</span>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
 
 <!-- Data Table -->
 <div class="card">
-  <ngx-datatable [rows]="filteredImputations" [rowHeight]="50" class="bootstrap core-bootstrap" [limit]="20"
-    [columnMode]="ColumnMode.force" [headerHeight]="50" [footerHeight]="50" [scrollbarH]="true">
+    <ngx-datatable [rows]="filteredImputations" [rowHeight]="50" class="bootstrap core-bootstrap" [limit]="20"
+                   [columnMode]="ColumnMode.force" [headerHeight]="50" [footerHeight]="50" [scrollbarH]="true">
 
-    <ngx-datatable-column name="Date" prop="vehiculeRoute.date" [width]="300">
-      <ng-template let-row="row" ngx-datatable-cell-template>
-        {{ row.vehiculeRoute?.date | date: 'dd/MM/yyyy' }}
-      </ng-template>
-    </ngx-datatable-column>
+        <ngx-datatable-column name="Date" prop="vehiculeRoute.date" [width]="100">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.vehiculeRoute?.date | date: 'dd/MM/yyyy' }}
+            </ng-template>
+        </ngx-datatable-column>
 
-    <ngx-datatable-column name="Vehicule" prop="vehiculeRoute.vehiculeGpsLocation.name" [width]="300">
-      <ng-template let-row="row" ngx-datatable-cell-template>
-        {{ row.vehiculeRoute?.vehiculeGpsLocation?.name }}
-      </ng-template>
-    </ngx-datatable-column>
+        <ngx-datatable-column name="Vehicule" prop="vehiculeRoute.vehiculeGpsLocation.name" [width]="200">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.vehiculeRoute?.vehiculeGpsLocation?.name }}
+            </ng-template>
+        </ngx-datatable-column>
 
-    <ngx-datatable-column name="Affaire" prop="affaire.code" [width]="300">
-      <ng-template let-row="row" ngx-datatable-cell-template>
-        {{ row.affaireCode }}
-      </ng-template>
-    </ngx-datatable-column>
+        <ngx-datatable-column name="Affaire" prop="affaire.code" [width]="250">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.affaireCode }}
+            </ng-template>
+        </ngx-datatable-column>
 
-    <ngx-datatable-column name="Client" prop="client.name" [width]="300">
-      <ng-template let-row="row" ngx-datatable-cell-template>
-        {{ row.client?.name }}
-      </ng-template>
-    </ngx-datatable-column>
+        <ngx-datatable-column name="Client" prop="client.name" [width]="100">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.client?.name }}
+            </ng-template>
+        </ngx-datatable-column>
 
-    <ngx-datatable-column name="Lot" prop="lot.name" [width]="300">
-      <ng-template let-row="row" ngx-datatable-cell-template>
-        {{ row.lot?.name }}
-      </ng-template>
-    </ngx-datatable-column>
+        <ngx-datatable-column name="Lot" prop="lot.name" [width]="120">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.lot?.name }}
+            </ng-template>
+        </ngx-datatable-column>
 
-    <ngx-datatable-column name="Soustraitant" prop="soustraitant.name" [width]="300">
-      <ng-template let-row="row" ngx-datatable-cell-template>
-        {{ row.subContractorFullName }}
-      </ng-template>
-    </ngx-datatable-column>
+        <ngx-datatable-column name="Soustraitant" prop="soustraitant.name" [width]="200">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.subContractorFullName }}
+            </ng-template>
+        </ngx-datatable-column>
 
-    <ngx-datatable-column name="% Imputation" prop="fillingPercentage" [width]="300">
-      <ng-template let-row="row" ngx-datatable-cell-template>
-        {{ row.fillingPercentage }}%
-      </ng-template>
-    </ngx-datatable-column>
-    <ngx-datatable-column name="Cost Imputation" prop="fillingPercentage" [width]="300">
-      <ng-template let-row="row" ngx-datatable-cell-template>
-        <strong style="color: #28a745;">{{ row.costImputation }} </strong>
-      </ng-template>
-    </ngx-datatable-column>
-    <ngx-datatable-column name="Observation" prop="observation" [width]="300">
-      <ng-template let-row="row" ngx-datatable-cell-template>
-        {{ row.observation }}
-      </ng-template>
-    </ngx-datatable-column>
-  </ngx-datatable>
+        <ngx-datatable-column name="% Imputation" prop="fillingPercentage" [width]="80">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.fillingPercentage }}%
+            </ng-template>
+        </ngx-datatable-column>
+        <ngx-datatable-column name="Cost Imputation" prop="fillingPercentage" [width]="80">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+                <strong style="color: #28a745;">{{ row.costImputation|number }} </strong>
+            </ng-template>
+        </ngx-datatable-column>
+        <ngx-datatable-column name="Observation" prop="observation" [width]="100">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.observation }}
+            </ng-template>
+        </ngx-datatable-column>
+    </ngx-datatable>
 </div>

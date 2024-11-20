@@ -14,4 +14,26 @@
 }
 
 
+.badge {
+  padding: 5px 10px;
+  border-radius: 12px;
+  color: white;
+  font-size: 12px;
+  text-align: center;
+}
+
+.badge-success {
+  background-color: #28a745;
+  width: 150px;
+}
+
+.badge-warning {
+  background-color: #ffc107;
+  width: 150px;
+}
+
+.badge-danger {
+  background-color: #dc3545;
+  width: 150px;
+}
 

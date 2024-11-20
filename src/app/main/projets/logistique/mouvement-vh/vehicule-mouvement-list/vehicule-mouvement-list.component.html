@@ -33,6 +33,7 @@
         <ngx-datatable-column name="Date" prop="date" [width]="150">
             <ng-template let-row="row" ngx-datatable-cell-template>
                 {{ row.date | date: 'dd/MM/yyyy' }}
+
             </ng-template>
         </ngx-datatable-column>
 
@@ -51,11 +52,11 @@
         <ngx-datatable-column name="Km parcouru" prop="routeLength" [width]="150">
             <ng-template let-row="row" ngx-datatable-cell-template>
                 <div *ngIf="selectedRow?.id === row.id; else viewMode" class="d-flex align-items-center">
-                    <input [(ngModel)]="row.route_length" class="form-control mr-2" type="number" />
+                    <input [(ngModel)]="row.routeLength" class="form-control mr-2" type="number" />
                     <button class="btn btn-success" (click)="updateRouteLength(row)">Save</button>
                 </div>
                 <ng-template #viewMode>
-                    <strong (click)="editRow(row)" style="color: forestgreen; cursor: pointer;">{{ row.route_length }}
+                    <strong (click)="editRow(row)" style="color: forestgreen; cursor: pointer;">{{ row.routeLength }}
                         km</strong>
                 </ng-template>
             </ng-template>
@@ -88,6 +89,18 @@
                 <strong style="color: orangered;">{{ row.costPerTrip - row.fillingCost | currency: ' ' }}</strong>
             </ng-template>
         </ngx-datatable-column>
+        <ngx-datatable-column name="Status" [width]="150">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+                <span class="badge" [ngClass]="{
+                  'badge-success': row.status === 'Complet',
+                  'badge-warning': row.status === 'Imputation en attente',
+                  'badge-danger': row.status === 'Manquant'
+                }">
+                    {{ row.status }}
+                </span>
+            </ng-template>
+        </ngx-datatable-column>
+
 
         <ngx-datatable-column name="Actions" [width]="40" [sortable]="false">
             <ng-template ngx-datatable-cell-template let-row="row">
@@ -111,203 +124,8 @@
 </div>
 
 
-<!-- Modal for Association -->
-<!-- <ng-template #associationModal let-modal>
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Details From -> To</h5>
-                <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
-            </div>
-            <div class="modal-body">
-                <form (ngSubmit)="saveAssociation()">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Affaire</th>
-                                    <th>Fournisseur</th>
-                                    <th>BL</th>
-                                    <th>BL Montant</th>
-                                    <th>Date BL</th>
-                                    <th>Departement</th>
-                                    <th>To Affaire</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr *ngFor="let fromMouvement of fromMouvements; let i = index">
-                                    <td>
-                                        <select class="form-control custom-input-select"
-                                            [(ngModel)]="fromMouvement.affaire" name="affaire_{{i}}"
-                                            [disabled]="fromMouvement.fournisseur" required>
-                                            <option *ngFor="let affaire of affaires" [ngValue]="affaire">
-                                                {{ affaire.code }}
-                                            </option>
-                                        </select>
-                                    </td>
 
-
-                                    <td>
-                                        <select class="form-control custom-input-select"
-                                            [(ngModel)]="fromMouvement.fournisseur" name="fournisseur_{{i}}"
-                                            [disabled]="fromMouvement.affaire" required>
-                                            <option *ngFor="let fournisseur of fournisseurs" [ngValue]="fournisseur">
-                                                {{ fournisseur.name }}
-                                            </option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-lg custom-input"
-                                            [(ngModel)]="fromMouvement.bl" name="bl_{{i}}" required />
-                                    </td>
-                                    <td>
-                                        <input type="number" class="form-control form-control-lg custom-input"
-                                            [(ngModel)]="fromMouvement.blMontant" name="blMontant_{{i}}" required />
-                                    </td>
-                                    <td>
-                                        <input type="date" class="form-control form-control-lg"
-                                            [ngModel]="fromMouvement.dateBl | date:'yyyy-MM-dd'"
-                                            (ngModelChange)="fromMouvement.dateBl = $event" name="dateBl_{{i}}"
-                                            required />
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-lg custom-input"
-                                            [(ngModel)]="fromMouvement.departement" name="departement_{{i}}" required />
-                                    </td>
-                                    <td>
-                                        <select class="form-control custom-input-select"
-                                            [(ngModel)]="fromMouvement.toAffaire" name="toAffaire_{{i}}" required>
-                                            <option *ngFor="let affaire of affaires" [ngValue]="affaire">
-                                                {{ affaire.code }}
-                                            </option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-danger btn-sm"
-                                            (click)="removeFromMouvement(fromMouvement)">
-                                            Supprimer
-                                        </button>
-
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="d-flex justify-content-between mt-3">
-                        <button type="button" class="btn btn-primary" (click)="addFromMouvement()">
-                            Ajouter
-                        </button>
-                        <button type="submit" class="btn btn-success">
-                            Sauvegarder
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</ng-template> -->
-
-<!-- <ng-template #associationModal let-modal>
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Details From </h5>
-                <button type="button" class="btn btn-close btn-lg" aria-label="Close" (click)="modal.dismiss()">
-                    <span aria-hidden="true" style="font-size: 1.5rem;">&times;</span>
-                </button>
-            </div>
-
-            <div class="modal-body">
-                <form (ngSubmit)="saveAssociation()">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead>
-                            <tr>
-                                <th>Affaire</th>
-                                <th>Fournisseur</th>
-                                <th>BL</th>
-                                <th>BL Montant</th>
-                                <th>Date BL</th>
-                                <th>Actions</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr *ngFor="let fromMouvement of fromMouvements; let i = index">
-                                <td>
-                                    <select class="form-control custom-input-select"
-                                            [(ngModel)]="fromMouvement.affaire" name="affaire_{{i}}"
-                                            [disabled]="fromMouvement.fournisseur" required>
-                                        <option *ngFor="let affaire of affaires" [ngValue]="affaire">
-                                            {{ affaire.code }}
-                                        </option>
-                                    </select>
-                                </td>
-
-
-                                <td>
-                                    <select class="form-control custom-input-select"
-                                            [(ngModel)]="fromMouvement.fournisseur" name="fournisseur_{{i}}"
-                                            [disabled]="fromMouvement.affaire" required>
-                                        <option *ngFor="let fournisseur of fournisseurs" [ngValue]="fournisseur">
-                                            {{ fournisseur.intituleFournisseur }}
-                                        </option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control form-control-lg custom-input"
-                                           [(ngModel)]="fromMouvement.bl" name="bl_{{i}}" required/>
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control form-control-lg custom-input"
-                                           [(ngModel)]="fromMouvement.blMontant" name="blMontant_{{i}}" required/>
-                                </td>
-                                <td>
-                                    <input type="date" class="form-control form-control-lg"
-                                           [ngModel]="fromMouvement.dateBl | date:'yyyy-MM-dd'"
-                                           (ngModelChange)="fromMouvement.dateBl = $event" name="dateBl_{{i}}"
-                                           required/>
-                                </td>
-
-                                  <td>
-                                    <button type="button" class="btn btn-danger btn-sm"
-                                        (click)="removeFromMouvement(fromMouvement)">
-                                        Supprimer
-                                    </button>
-                                </td>
-                                <td>
-                                    <div ngbDropdown class="dropdown">
-                                        <button ngbDropdownToggle class="btn btn-light" type="button">
-                                            &#x22EE;
-                                        </button>
-                                        <div ngbDropdownMenu>
-                                            <a class="dropdown-item text-danger"
-                                               (click)="removeFromMouvement(fromMouvement)">
-                                                Supprimer
-                                            </a>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="d-flex justify-content-between mt-3">
-                        <button type="button" class="btn btn-primary" (click)="addFromMouvement()">
-                            Ajouter
-                        </button>
-                        <button type="submit" class="btn btn-success">
-                            Sauvegarder
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</ng-template>-->
-
+<!--Details From modal-->
 <ng-template #associationModal let-modal>
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -333,8 +151,8 @@
                         </thead>
                         <tbody>
                             <tr *ngFor="let fromMouvement of fromMouvements">
-                                <td>{{ fromMouvement.affaire?.code || '-' }}</td>
-                                <td>{{ fromMouvement.fournisseur?.intituleFournisseur || '-' }}</td>
+                                <td>{{ fromMouvement.affaireCode || '-' }}</td>
+                                <td>{{ fromMouvement.fournisseurName || '-' }}</td>
                                 <td>{{ fromMouvement.bl }}</td>
                                 <td>{{ fromMouvement.blMontant }}</td>
                                 <td>{{ fromMouvement.dateBl | date:'yyyy-MM-dd' }}</td>
@@ -357,15 +175,16 @@
 
             <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6; padding: 1rem;">
                 <div class="d-flex justify-content-between align-items-center w-100">
-                    <button type="button" class="btn btn-success" (click)="openAddFromMouvementModal()">+ Ajouter
-                        FromMouvement</button>
+                    <button type="button" class="btn btn-success" (click)="openAddFromMouvementModal()">
+                        + Ajouter FromMouvement
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </ng-template>
 
-
+<!--addFromMouvementModal-->
 <ng-template #addFromMouvementModal let-modal>
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -379,29 +198,57 @@
             <div class="modal-body">
                 <form (ngSubmit)="saveFromMouvement(modal)">
                     <div class="row">
+
                         <!-- Affaire Field -->
+                        <div class="col-md-6">
+
+                            <label for="affaire">Affaire</label>
+                            <fieldset class="form-group">
+                                <ng-select [clearable]="true" [items]="affaires"
+                                    [(ngModel)]="currentFromMouvement.affaire" name="affaires" bindLabel="code">
+                                </ng-select>
+                            </fieldset>
+
+                        </div>
+
+
+                        <!--&lt;!&ndash; Affaire Field &ndash;&gt;
                         <div class="col-md-6">
                             <label for="newAffaire">Affaire</label>
                             <select id="newAffaire" class="form-control custom-input-select"
-                                [(ngModel)]="currentFromMouvement.affaireId" name="newAffaire" required
-                                (change)="onAffaireChange()" [disabled]="isAffaireDisabled">
+                                    [(ngModel)]="currentFromMouvement.affaireId" name="newAffaire" required
+                                    (change)="onAffaireChange()" [disabled]="isAffaireDisabled">
                                 <option *ngFor="let affaire of affaires" [ngValue]="affaire.id">
                                     {{ affaire.code }}
                                 </option>
                             </select>
-                        </div>
+                        </div>-->
 
                         <!-- Fournisseur Field -->
                         <div class="col-md-6" *ngIf="fournisseurs && fournisseurs.length > 0">
+
+                            <label for="affaire">Fournisseur</label>
+                            <fieldset class="form-group">
+                                <ng-select [clearable]="true" [items]="fournisseurs"
+                                    [(ngModel)]="currentFromMouvement.fournisseur" name="frs"
+                                    bindLabel="intituleFournisseur">
+                                </ng-select>
+                            </fieldset>
+
+                        </div>
+
+
+                        <!--&lt;!&ndash; Fournisseur Field &ndash;&gt;
+                        <div class="col-md-6" *ngIf="fournisseurs && fournisseurs.length > 0">
                             <label for="newFournisseur">Fournisseur</label>
                             <select id="newFournisseur" class="form-control custom-input-select"
-                                [(ngModel)]="currentFromMouvement.fournisseurId" name="newFournisseur" required
-                                (change)="onFournisseurChange()" [disabled]="isFournisseurDisabled">
+                                    [(ngModel)]="currentFromMouvement.fournisseurId" name="newFournisseur" required
+                                    (change)="onFournisseurChange()" [disabled]="isFournisseurDisabled">
                                 <option *ngFor="let fournisseur of fournisseurs" [ngValue]="fournisseur.id">
                                     {{ fournisseur.intituleFournisseur }}
                                 </option>
                             </select>
-                        </div>
+                        </div>-->
 
 
                         <!-- BL Field -->
@@ -432,7 +279,8 @@
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary mr-1">Sauvegarder From Mouvement</button>
                                 <button type="button" class="btn btn-outline-secondary"
-                                    (click)="modal.dismiss()">Annuler</button>
+                                    (click)="modal.dismiss()">Annuler
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -442,6 +290,7 @@
     </div>
 </ng-template>
 
+<!--editeFromMouvementModal-->
 <ng-template #editeFromMouvementModal let-modal>
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -457,47 +306,54 @@
                     <div class="row">
                         <!-- Affaire Field -->
                         <div class="col-md-6">
-                            <label for="newAffaire">Affaire</label>
-                            <select id="newAffaire" class="form-control custom-input-select"
-                                [(ngModel)]="fromMouvementResponseDTO.affaireId" name="newAffaire" required
-                                (change)="onAffaireChangeedite($event.target.value)" [disabled]="isAffaireDisabled">
-                                <option *ngFor="let affaire of affaires" [ngValue]="affaire.id">
-                                    {{ affaire.code }}
-                                </option>
-                            </select>
+
+                            <label for="affaire">Affaire</label>
+                            <fieldset class="form-group">
+                                <ng-select [clearable]="true" [items]="affaires"
+                                    [(ngModel)]="fromMouvementResponseDTO.affaire" name="affaires" bindLabel="code">
+                                </ng-select>
+                            </fieldset>
+
                         </div>
 
                         <!-- Fournisseur Field -->
                         <div class="col-md-6" *ngIf="fournisseurs && fournisseurs.length > 0">
-                            <label for="newFournisseur">Fournisseur</label>
-                            <select id="newFournisseur" class="form-control custom-input-select"
-                                [(ngModel)]="fromMouvementResponseDTO.fournisseurId" name="newFournisseur" required
-                                (change)="onFournisseurChangeedite($event.target.value)" [disabled]="isFournisseurDisabled">
-                                <option *ngFor="let fournisseur of fournisseurs" [ngValue]="fournisseur.id">
-                                    {{ fournisseur.intituleFournisseur }}
-                                </option>
-                            </select>
+
+                            <label for="affaire">Fournisseur</label>
+                            <fieldset class="form-group">
+                                <ng-select [clearable]="true" [items]="fournisseurs"
+                                    [(ngModel)]="fromMouvementResponseDTO.fournisseur" name="frs"
+                                    bindLabel="intituleFournisseur">
+                                </ng-select>
+                            </fieldset>
+
                         </div>
 
                         <!-- BL Field -->
                         <div class="col-md-6">
-                            <label for="newBl">BL</label>
-                            <input type="text" id="newBl" class="form-control" [(ngModel)]="fromMouvementResponseDTO.bl"
-                                name="newBl" required />
+                            <label for="newBlNewFromTo">BL</label>
+                            <input type="text" id="newBlNewFromTo" class="form-control"
+                                [(ngModel)]="fromMouvementResponseDTO.bl" name="newBl" required />
                         </div>
 
                         <!-- BL Montant Field -->
                         <div class="col-md-6">
-                            <label for="newBlMontant">BL Montant</label>
-                            <input type="number" id="newBlMontant" class="form-control"
+                            <label for="newBlMontantFromTo">BL Montant</label>
+                            <input type="number" id="newBlMontantFromTo" class="form-control"
                                 [(ngModel)]="fromMouvementResponseDTO.blMontant" name="newBlMontant" required />
                         </div>
 
                         <!-- Date BL Field -->
                         <div class="col-md-6">
-                            <label for="newDateBl">Date BL</label>
-                            <input type="date" id="newDateBl" class="form-control"
-                                [(ngModel)]="fromMouvementResponseDTO.dateBl" name="newDateBl" required />
+                            <h4 class="card-title">Date BL</h4>
+                            <fieldset class="form-group">
+
+                                <date-picker-i18n [ngbDateStruct]=ngbDateBl
+                                    (dateSelectedEvent)="onDateBlChange($event)">
+                                </date-picker-i18n>
+
+                            </fieldset>
+
                         </div>
                     </div>
 
@@ -507,7 +363,8 @@
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary mr-1">Sauvegarder From Mouvement</button>
                                 <button type="button" class="btn btn-outline-secondary"
-                                    (click)="modal.dismiss()">Annuler</button>
+                                    (click)="modal.dismiss()">Annuler
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -516,12 +373,6 @@
         </div>
     </div>
 </ng-template>
-
-
-
-
-
-
 
 
 <!-- Modal for Imputation Worked-->
@@ -755,7 +606,7 @@
                                 <fieldset class="form-group">
                                     <ng-select id="affaire" [clearable]="false" [items]="affaires"
                                         [(ngModel)]="tripImputationResponseDTO.affaire" name="affaires" bindLabel="code"
-                                        (change)="onAffaireChanged($event)" placeholder="Affaire">
+                                        (change)="onAffaireChanged($event)">
                                     </ng-select>
                                 </fieldset>
 
@@ -806,8 +657,7 @@
                                 <label for="client">Client</label>
                                 <fieldset class="form-group">
                                     <ng-select id="client" [clearable]="true" [items]="clients"
-                                        [(ngModel)]="tripImputationResponseDTO.client" name="clients" bindLabel="name"
-                                        placeholder="Le Client">
+                                        [(ngModel)]="tripImputationResponseDTO.client" name="clients" bindLabel="name">
                                     </ng-select>
                                 </fieldset>
 
@@ -832,8 +682,7 @@
                                 <label for="lot">Lot</label>
                                 <fieldset class="form-group">
                                     <ng-select id="lot" [clearable]="true" [items]="lots"
-                                        [(ngModel)]="tripImputationResponseDTO.lot" name="lots" bindLabel="name"
-                                        placeholder="Lot">
+                                        [(ngModel)]="tripImputationResponseDTO.lot" name="lots" bindLabel="name">
                                     </ng-select>
                                 </fieldset>
 
@@ -858,8 +707,7 @@
                                 <fieldset class="form-group">
                                     <ng-select id="subContractor" [clearable]="true" [items]="soustraitants"
                                         [(ngModel)]="tripImputationResponseDTO.soustraitant" name="soustraitants"
-                                        bindLabel="fullName" (change)="onSubcontractorChanged($event)"
-                                        placeholder="Le Sous-traitants">
+                                        bindLabel="fullName" (change)="onSubcontractorChanged($event)">
                                     </ng-select>
                                 </fieldset>
 
@@ -878,8 +726,8 @@
 
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary mr-1">Sauvegarder Imputation</button>
-                            <button type="button" class="btn btn-outline-secondary"
-                                (click)="modal.dismiss()">Annuler</button>
+                            <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">Annuler
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -919,7 +767,7 @@
                                 <fieldset class="form-group">
                                     <ng-select id="affaireEditedId" [clearable]="false" [items]="affaires"
                                         [(ngModel)]="tripImputationResponseDTO.affaire" name="affaires" bindLabel="code"
-                                        (change)="onAffaireChanged($event)" placeholder="Affaire">
+                                        (change)="onAffaireChanged($event)">
                                     </ng-select>
                                 </fieldset>
 
@@ -967,8 +815,7 @@
                                 <label for="clientEditedId">Client</label>
                                 <fieldset class="form-group">
                                     <ng-select id="clientEditedId" [clearable]="true" [items]="clients"
-                                        [(ngModel)]="tripImputationResponseDTO.client" name="clients" bindLabel="name"
-                                        placeholder="Le Client">
+                                        [(ngModel)]="tripImputationResponseDTO.client" name="clients" bindLabel="name">
                                     </ng-select>
                                 </fieldset>
 
@@ -994,8 +841,7 @@
                                 <label for="lotEditedId">Lot</label>
                                 <fieldset class="form-group">
                                     <ng-select id="lotEditedId" [clearable]="true" [items]="lots"
-                                        [(ngModel)]="tripImputationResponseDTO.lot" name="lots" bindLabel="name"
-                                        placeholder="Lot">
+                                        [(ngModel)]="tripImputationResponseDTO.lot" name="lots" bindLabel="name">
                                     </ng-select>
                                 </fieldset>
                             </div>
@@ -1018,8 +864,7 @@
                                 <fieldset class="form-group">
                                     <ng-select id="subContractorEditedId" [clearable]="true" [items]="soustraitants"
                                         [(ngModel)]="tripImputationResponseDTO.soustraitant" name="soustraitants"
-                                        bindLabel="fullName" (change)="onSubcontractorChanged($event)"
-                                        placeholder="Le Sous-traitants">
+                                        bindLabel="fullName" (change)="onSubcontractorChanged($event)">
                                     </ng-select>
                                 </fieldset>
                             </div>
@@ -1036,8 +881,8 @@
 
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary mr-1">Modifier Imputation</button>
-                            <button type="button" class="btn btn-outline-secondary"
-                                (click)="modal.dismiss()">Annuler</button>
+                            <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">Annuler
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -1086,3 +931,18 @@
         </div>
     </div>
 </ng-template>
+
+<!-- <span [ngClass]="{
+    'badge bg-secondary': getVehiculeRouteStatus(row) === 'Not Associated',
+    'badge bg-warning': getVehiculeRouteStatus(row) === 'Mouvement Incomplete' ||
+                        getVehiculeRouteStatus(row) === 'Awaiting Imputation' ||
+                        getVehiculeRouteStatus(row) === 'Imputation Pending' ||
+                        getVehiculeRouteStatus(row) === 'In Progress',
+    'badge bg-info': getVehiculeRouteStatus(row) === 'Imputation Incomplete' ||
+                     getVehiculeRouteStatus(row) === 'Mouvement Pending',
+    'badge bg-primary': getVehiculeRouteStatus(row) === 'Imputation Complete',
+    'badge bg-success': getVehiculeRouteStatus(row) === 'Fully Validated' ||
+                        getVehiculeRouteStatus(row) === 'Validated'
+}">
+{{ getVehiculeRouteStatus(row) }}
+</span> -->
