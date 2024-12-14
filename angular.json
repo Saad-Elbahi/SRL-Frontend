@@ -86,6 +86,7 @@
             "namedChunks": true
           },
           "configurations": {
+            
             "production": {
               "fileReplacements": [
                 {
@@ -98,13 +99,14 @@
               "outputHashing": "all",
               "sourceMap": false,
               "namedChunks": false,
+              "aot": true,
               "extractLicenses": true,
               "vendorChunk": false,
               "buildOptimizer": true,
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "4mb",
+                  "maximumWarning": "2mb",
                   "maximumError": "5mb"
                 },
                 {

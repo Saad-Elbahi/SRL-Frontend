@@ -25,8 +25,12 @@ export const environment = {
     vhrouteapi: "http://localhost:6201/vhrouteapi",
     soustraitantapi:"http://localhost:6201/soustraitantapi",
     lotApi:"http://localhost:6201/lotApi",
-    clientApi:"http://localhost:6201/clientApi"
-
+    clientApi:"http://localhost:6201/clientApi",
+    //Part Engin
+    EnginRteapi:"http://localhost:6203/EnginRteapi",
+    EnginGpsapi:"http://localhost:6203/EnginGpsapi",
+    chauffeurEnginapi:"http://localhost:6203/chauffeurEnginapi",
+    Enginimpapi:"http://localhost:6203/Enginimpapi"
 };
 
 /*

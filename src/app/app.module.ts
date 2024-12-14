@@ -26,6 +26,10 @@ import localeFr from '@angular/common/locales/fr';
 import {HttpClientInMemoryWebApiModule} from "angular-in-memory-web-api";
 import {FakeDbService} from "../@fake-db/fake-db.service";
 import {ErrorInterceptor} from "./main/authentication/error.interceptor";
+import { CorePipesModule } from '@core/pipes/pipes.module';
+import { TimeFormatPipe } from '@core/pipes/time-format.pipe';
+
+
 
 registerLocaleData(localeFr, 'fr');
 
@@ -63,7 +67,7 @@ const appRoutes: Routes = [
 
 @NgModule({
     declarations: [
-        AppComponent
+        AppComponent,
     ],
     imports: [
         BrowserModule,
@@ -91,7 +95,8 @@ const appRoutes: Routes = [
         CoreThemeCustomizerModule,
         CardSnippetModule,
         LayoutModule,
-        ContentHeaderModule
+        ContentHeaderModule, 
+        CorePipesModule    
     ],
 
     providers: [
@@ -99,7 +104,7 @@ const appRoutes: Routes = [
          {provide: LOCALE_ID, useValue: 'fr-FR'},
     ],
     entryComponents: [],
-    bootstrap: [AppComponent]
+    bootstrap: [AppComponent],
 })
 export class AppModule {
 }

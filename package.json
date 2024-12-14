@@ -1,21 +1,22 @@
 {
   "name": "sr-manager",
   "version": "7.0.0",
-  "build-serve": "node --max_old_space_size=8048 ./node_modules/@angular/cli/bin/ng serve",
+  "build-serve": "node --max_old_space_size=16384 ./node_modules/@angular/cli/bin/ng serve",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
+    "start": "node --max_old_space_size=16384 ./node_modules/@angular/cli/bin/ng serve",
+    "build": "node --max_old_space_size=16384 ./node_modules/@angular/cli/bin/ng build",
     "start-hmr": "ng serve --configuration hmr --source-map=false --hmr-warning=false",
     "start-hmr-sourcemaps": "ng serve --configuration hmr --source-map=true --hmr-warning=false",
     "build-stats": "node --max_old_space_size=8192 ./node_modules/@angular/cli/bin/ng build --stats-json",
-    "build:prod": "node --max_old_space_size=8192 ./node_modules/@angular/cli/bin/ng build --configuration production",
+    "build:prod": "node --max_old_space_size=32768 ./node_modules/@angular/cli/bin/ng build --configuration production",
     "build:prod-stats": "node --max_old_space_size=8192 ./node_modules/@angular/cli/bin/ng build --configuration production --stats-json",
     "bundle-analyzer": "webpack-bundle-analyzer dist/vuexy/stats.json",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"
-  },
+}
+,
   "private": true,
   "dependencies": {
     "@angular/animations": "12.0.3",
