@@ -7,6 +7,7 @@ import { ToastrService } from 'ngx-toastr';
 import { EnginGpsLocation } from '../../../models/EnginGpsLocation';
 import { takeUntil } from 'rxjs/operators';
 import { CoreSidebarService } from '@core/components/core-sidebar/core-sidebar.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-engin-list',
@@ -92,6 +93,64 @@ refreshData(): void {
     }
   );
 }
+confirmDeleteEngin(id: number): void {
+        if (!id) {
+            console.error('ID de Engin invalide:', id);
+            return; // Quitter si l'ID du véhicule est indéfini ou invalide
+        }
+    
+        Swal.fire({
+            title: 'Êtes-vous sûr(e) ?',
+            text: "Vous ne pourrez pas annuler cette action !",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, supprimez-le !',
+            cancelButtonText: 'Non, annuler !',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-danger ml-1'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                this.deleteEngin(id);
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+                Swal.fire({
+                    title: 'Non annulé',
+                    text: 'Votre Engin est en sécurité :)',
+                    icon: 'error',
+                    customClass: {
+                        confirmButton: 'btn btn-success'
+                    }
+                });
+            }
+        });
+    }
+    deleteEngin(id: number): void {
+            this.enginGpsLocationService.deleteEngin(id).subscribe({
+                next: (response) => {
+                    // Rafraîchir la liste des véhicules ici si nécessaire
+                    Swal.fire({
+                        title: 'Supprimé !',
+                        text: 'Engin a été supprimé.',
+                        icon: 'success',
+                        customClass: {
+                            confirmButton: 'btn btn-success'
+                        }
+                    });
+                },
+                error: (error) => {
+                    Swal.fire({
+                        title: 'Erreur !',
+                        text: `Une erreur est survenue lors de la suppression Engin : ${error.status} - ${error.message || 'Erreur inconnue'}`,
+                        icon: 'error',
+                        customClass: {
+                            confirmButton: 'btn btn-danger'
+                        }
+                    });
+                    console.error('Erreur de suppression :', error); // Détails de l'erreur pour le débogage
+                }
+            });
+        }
 
 
 }

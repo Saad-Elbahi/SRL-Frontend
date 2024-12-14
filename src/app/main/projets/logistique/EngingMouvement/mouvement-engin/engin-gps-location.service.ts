@@ -1,8 +1,9 @@
 import { Injectable } from "@angular/core";
 import { SrManagerService } from "app/main/projets/sr-manager.service";
 import { environment } from "environments/environment";
-import { BehaviorSubject, Observable } from "rxjs";
+import { BehaviorSubject, Observable, throwError } from "rxjs";
 import { EnginGpsLocationDTO } from "../dto/EnginGpsLocationDTO";
+import { catchError, tap } from "rxjs/operators";
 
 @Injectable({
   providedIn: "root",
@@ -86,4 +87,20 @@ export class EnginGpsLocationService {
         }, reject);
     });
   }
+   deleteEngin(id: number): Observable<any> {
+      if (!id) {
+          console.error('Cannot delete vehicle. Invalid Engin ID:', id);
+          return throwError(() => new Error('Invalid vehicle ID'));
+      }
+  
+      const url = `${environment.EnginGpsapi}/deleteEngin/${id}`;
+      
+      return this.srManagerService.deleteRessource(url).pipe(
+          tap((response) => this.onEnginListChanged.next(response)),
+          catchError((error) => {
+              console.error('Error deleting Engin:', error.status, error.message);
+              return throwError(() => new Error(error.message || 'Error deleting Engin'));
+          })
+      );
+}
 }
