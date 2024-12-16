@@ -106,6 +106,15 @@ export const menu: CoreMenu[] = [
                 url: 'projets/logistique/mouvementEngin/engin-mouvement',
               },
               {
+                id: 'recap',
+                title: 'Recap Imputation',
+                translate: 'MENU.LOGISTIQUE.MOUVEMENT_JOURNALIER.RECAP',
+                type: 'item',
+                roles: [Role.ADMIN, Role.PDG, Role.DGA, Role.RESP_LOG, Role.ASSIST_LOG],
+                icon: 'slack',
+                url: 'projets/logistique/mouvementEngin/recap-imputation',
+              },
+              {
                 id: 'engin',
                 title: 'Engin',
                 translate: 'MENU.LOGISTIQUE.ENGIN.MACHINE',

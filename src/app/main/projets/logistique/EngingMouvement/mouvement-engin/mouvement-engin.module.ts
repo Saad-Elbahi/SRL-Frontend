@@ -14,7 +14,8 @@ import { EnginListComponent } from "./engin/engin-list/engin-list.component";
 import { CoreSidebarModule } from "../../../../../../@core/components/core-sidebar/core-sidebar.module";
 import { AffectationChauffeurCoutComponent } from "./engin/affectation-chauffeur-cout/affectation-chauffeur-cout.component";
 import { AuthGuard } from "app/main/authentication/auth.guards";
-import { AddEnginComponent } from './engin/add-engin/add-engin.component';
+import { AddEnginComponent } from "./engin/add-engin/add-engin.component";
+import { RecapEnginImputationComponent } from "./recap-engin-imputation/recap-engin-imputation.component";
 
 const routes: Routes = [
   {
@@ -23,16 +24,26 @@ const routes: Routes = [
   },
   {
     path: "engin-list",
-    component:EnginListComponent
+    component: EnginListComponent,
   },
-  {path: "chauffeur",
-    loadChildren: () => import("./chauffeur/chauffeur.module").then((m) => m.ChauffeurModule),
-    canActivate: [AuthGuard]
-},
+  { path: "recap-imputation", component: RecapEnginImputationComponent },
+
+  {
+    path: "chauffeur",
+    loadChildren: () =>
+      import("./chauffeur/chauffeur.module").then((m) => m.ChauffeurModule),
+    canActivate: [AuthGuard],
+  },
 ];
 
 @NgModule({
-  declarations: [EnginMouvementListComponent, EnginListComponent, AffectationChauffeurCoutComponent, AddEnginComponent],
+  declarations: [
+    EnginMouvementListComponent,
+    EnginListComponent,
+    AffectationChauffeurCoutComponent,
+    AddEnginComponent,
+    RecapEnginImputationComponent,
+  ],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
@@ -45,7 +56,7 @@ const routes: Routes = [
     NgbDropdownModule,
     DatePickerI18nModule,
     CorePipesModule,
-    CoreSidebarModule
-],
+    CoreSidebarModule,
+  ],
 })
 export class MouvementEnginModule {}

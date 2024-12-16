@@ -56,7 +56,8 @@ export const locale = {
             COLLAPSIBLE:"Mouvement Journalier Engin",
             MOUVEMENT:"Mouvement Engin",
             MACHINE:"Engin",
-            CHAUFFEUR:"Chauffeurs"
+            CHAUFFEUR:"Chauffeurs",
+            RECAP: "Recap Imputation",
         }
       },
       POINTAGE: {
